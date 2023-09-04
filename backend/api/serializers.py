@@ -17,20 +17,6 @@ from recipes.models import (Favorite,
 from user.models import CustomUser
 
 
-class CustomUserSerializer(UserSerializer):
-    "Кастомный сериализатор для отбображения пользователя."
-    class Meta:
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
-        model = CustomUser
-
-
-class RegisterUserSerializer(UserCreateSerializer):
-    "Кастомный сериализатор для регистрации пользователя."
-    class Meta:
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'password')
-        model = CustomUser
-
-
 class Base64ImageField(serializers.ImageField):
     "Кастомное поле для изображений."
     def to_internal_value(self, data):
@@ -52,6 +38,31 @@ class Hex2NameColor(serializers.Field):
         except ValueError:
             raise serializers.ValidationError('Для этого цвета нет имени')
         return data
+
+
+class CustomUserSerializer(UserSerializer):
+    "Кастомный сериализатор для отбображения пользователей."
+    
+    class Meta:
+        fields = ('id',
+                  'username',
+                  'email',
+                  'first_name',
+                  'last_name')
+        model = CustomUser
+
+
+class RegisterUserSerializer(UserCreateSerializer):
+    "Кастомный сериализатор для регистрации пользователя."
+    
+    class Meta:
+        fields = ('id',
+                  'username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'password')
+        model = CustomUser
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -78,7 +89,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         slug_field='username', read_only=True
     )
     ingredients = IngredientSerializer(many=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField()
 
     class Meta:
         fields = ('id', 'tag', 'author', 'ingredients', 'name',
