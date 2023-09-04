@@ -6,7 +6,7 @@ from user.models import CustomUser
 class Tag(models.Model):
     "Модель тега."
     name = models.CharField('Tag', unique=True, max_length=200)
-    slug = models.SlugField('URL', unique=True, max_length=200)
+    slug = models.SlugField('Slug', unique=True, max_length=200)
     color = models.CharField('Цветовой код', unique=True, max_length=7)
 
     class Meta:
@@ -42,11 +42,11 @@ class Recipe(models.Model):
         verbose_name='Автор',
         related_name='recipes'
     )
-    image = models.ImageField('Изображение', upload_to='recipes/image/')
+    image = models.ImageField('Изображение', upload_to='recipes/image/', null=True)
     tag = models.ManyToManyField(
         Tag,
         through='TagRecipe',
-        verbose_name='Тег',
+        verbose_name='Tag',
         related_name='recipes'
     )
     ingredients = models.ManyToManyField(
@@ -70,7 +70,8 @@ class TagRecipe(models.Model):
     "Модель отношений тег-рецепт."
     tag = models.ForeignKey(
         Tag,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='current_tag'
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -92,12 +93,14 @@ class IngredientRecipe(models.Model):
     "Модель отношений ингредиент-рецепт."
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='current_ingredient'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE
     )
+    amount = models.IntegerField()
 
     class Meta:
         ordering = ['-ingredient']

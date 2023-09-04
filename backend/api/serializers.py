@@ -10,6 +10,7 @@ from djoser.serializers import UserSerializer, UserCreateSerializer
 from recipes.models import (Favorite,
                             Ingredient,
                             Recipe,
+                            IngredientRecipe,
                             ShoppingCart,
                             Subscribe,
                             Tag)
@@ -54,7 +55,7 @@ class CustomUserSerializer(UserSerializer):
 
 class RegisterUserSerializer(UserCreateSerializer):
     "Кастомный сериализатор для регистрации пользователя."
-    
+
     class Meta:
         fields = ('id',
                   'username',
@@ -82,18 +83,36 @@ class IngredientSerializer(serializers.ModelSerializer):
         model = Ingredient
 
 
-class RecipeSerializer(serializers.ModelSerializer):
-    "Сериализатор для рецептов."
-    tag = TagSerializer(many=True)
-    author = serializers.SlugRelatedField(
-        slug_field='username', read_only=True
+class IngredientRecipeSerializer(serializers.ModelSerializer):
+
+    ingredient = serializers.PrimaryKeyRelatedField(
+        queryset = Ingredient.objects.all()
     )
-    ingredients = IngredientSerializer(many=True)
-    image = Base64ImageField()
 
     class Meta:
-        fields = ('id', 'tag', 'author', 'ingredients', 'name',
-                  'image', 'text', 'cooking_time')
+        fields = ('id', 'ingredient', 'amount')
+        model = IngredientRecipe
+
+
+class CreateRecipeSerializer(serializers.ModelSerializer):
+    "Сериализатор для рецептов."
+    ingredients = IngredientRecipeSerializer(
+        many=True,
+        source='current_ingredient'
+    )
+    tag = TagSerializer(
+        many=True,
+        source='current_tag'
+    )
+    # image = Base64ImageField()
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    class Meta:
+        fields = ('id', 'ingredients', 'tag', 'image',
+                  'author', 'name', 'text', 'cooking_time')
         model = Recipe
         validators = [
             UniqueTogetherValidator(
@@ -102,47 +121,50 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
         ]
 
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    "Сериализатор для избранного"
-    user = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
-    recipe = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        fields = ('id', 'user', 'recipe')
-        model = Favorite
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=['user', 'recipe']
-            )
-        ]
+    # def create(self, validated_data):
+    #     pass
 
 
-class SubscribeSerializer(serializers.ModelSerializer):
-    "Сериализатор для подписки на автора."
-    author = serializers.SlugRelatedField(
-        queryset=CustomUser.objects.all(), slug_field='username'
-    )
-    user = serializers.StringRelatedField(
-        default=serializers.CurrentUserDefault()
-    )
+# class FavoriteSerializer(serializers.ModelSerializer):
+#     "Сериализатор для избранного"
+#     user = serializers.SlugRelatedField(
+#         read_only=True, slug_field='username'
+#     )
+#     recipe = serializers.PrimaryKeyRelatedField(read_only=True)
 
-    class Meta:
-        fields = ('user', 'author')
-        model = Subscribe
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscribe.objects.all(),
-                fields=['user', 'author']
-            )
-        ]
+#     class Meta:
+#         fields = ('id', 'user', 'recipe')
+#         model = Favorite
+#         validators = [
+#             UniqueTogetherValidator(
+#                 queryset=Favorite.objects.all(),
+#                 fields=['user', 'recipe']
+#             )
+#         ]
 
-    def validate_author(self, value):
-        if value == self.context['request'].user:
-            raise serializers.ValidationError(
-                'Запрет подписки пользователя на самого себя!'
-            )
-        return value
+
+# class SubscribeSerializer(serializers.ModelSerializer):
+#     "Сериализатор для подписки на автора."
+#     author = serializers.SlugRelatedField(
+#         queryset=CustomUser.objects.all(), slug_field='username'
+#     )
+#     user = serializers.StringRelatedField(
+#         default=serializers.CurrentUserDefault()
+#     )
+
+#     class Meta:
+#         fields = ('user', 'author')
+#         model = Subscribe
+#         validators = [
+#             UniqueTogetherValidator(
+#                 queryset=Subscribe.objects.all(),
+#                 fields=['user', 'author']
+#             )
+#         ]
+
+#     def validate_author(self, value):
+#         if value == self.context['request'].user:
+#             raise serializers.ValidationError(
+#                 'Запрет подписки пользователя на самого себя!'
+#             )
+#         return value
