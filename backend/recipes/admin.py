@@ -13,7 +13,7 @@ from .models import (Favorite,
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'author', 'name', 'text', 'cooking_time', 'image')
     search_fields = ('author', 'name')
-    list_filter = ('author', 'name', 'tag')
+    list_filter = ('author', 'name', 'tags')
     # list_editable = ('text',)
     empty_value_display = '-пусто-'
 

@@ -43,16 +43,16 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     image = models.ImageField('Изображение', upload_to='recipes/image/', null=True)
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
         through='TagRecipe',
-        verbose_name='Tag',
+        verbose_name='Tags',
         related_name='recipes'
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientRecipe',
-        verbose_name='Ингредиент',
+        verbose_name='Ингредиенты',
         related_name='recipes'
     )
     cooking_time = models.IntegerField('Время приготовления')
@@ -71,11 +71,12 @@ class TagRecipe(models.Model):
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='current_tag'
+        related_name='current_recipe'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='current_tag'
     )
 
     class Meta:
@@ -94,11 +95,12 @@ class IngredientRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='current_ingredient'
+        related_name='current_recipe'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='current_ingredient'
     )
     amount = models.IntegerField()
 
