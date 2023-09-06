@@ -71,12 +71,12 @@ class TagRecipe(models.Model):
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='current_recipe'
+        related_name='recipes_used'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='current_tag'
+        related_name='tags_used'
     )
 
     class Meta:
@@ -95,14 +95,14 @@ class IngredientRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='current_recipe'
+        related_name='recipes_used'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='current_ingredient'
+        related_name='ingredients_used'
     )
-    amount = models.IntegerField()
+    amount = models.IntegerField('Количество')
 
     class Meta:
         ordering = ['-ingredient']
