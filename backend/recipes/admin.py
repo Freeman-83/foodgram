@@ -23,11 +23,16 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = ('name',)
 
 
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'slug', 'color')
+    list_filter = ('name',)
+
+
 admin.site.register(Favorite)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(IngredientRecipe)
 admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Tag)
+admin.site.register(Tag, TagAdmin)
 admin.site.register(TagRecipe)
 admin.site.register(ShoppingCart)
 admin.site.register(Subscribe)

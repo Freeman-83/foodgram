@@ -12,7 +12,8 @@ from recipes.models import (Favorite,
 from user.models import CustomUser
 
 from .serializers import (IngredientSerializer,
-                          CreateRecipeSerializer,
+                          RecipeListRetrieveSerializer,
+                          RecipeCreateUpdateSerializer,
                           TagSerializer)
 
 # from .permissions import AuthorOrReadOnly
@@ -35,7 +36,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.select_related('author').all()
-    serializer_class = CreateRecipeSerializer
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update']:
+            return RecipeCreateUpdateSerializer
+        return RecipeListRetrieveSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
