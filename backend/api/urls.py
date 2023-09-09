@@ -28,7 +28,6 @@ router.register('ingredients', IngredientViewSet)
 # router.register('users/<int:pk>/subscribe/',
 #                 SubscribeViewSet,
 #                 basename='subscribe')
-# router.register('users', CustomUserViewSet)
 
 
 urlpatterns = [

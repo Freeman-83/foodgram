@@ -9,7 +9,7 @@ from recipes.models import (Favorite,
                             Subscribe,
                             Tag)
 
-from user.models import CustomUser
+from users.models import CustomUser
 
 from .serializers import (IngredientSerializer,
                           RecipeListRetrieveSerializer,
@@ -46,6 +46,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
+# class SubscribeViewSet(viewsets.ModelViewSet):
+#     serializer_class = SubscribeSerializer
+#     # permission_classes = (permissions.IsAuthenticated,)
+#     # filter_backends = (filters.SearchFilter,)
+#     # search_fields = ('user__username', 'following__username')
+
+#     def get_queryset(self):
+#         new_queryset = self.request.user.follower.select_related(
+#             'user', 'author'
+#         ).all()
+#         return new_queryset
+
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)
+
+
 # class FavoriteViewSet(viewsets.ModelViewSet):
 #     serializer_class = FavoriteSerializer
 #     # permission_classes = (permissions.IsAuthenticated,)
@@ -62,17 +78,3 @@ class RecipeViewSet(viewsets.ModelViewSet):
 #         serializer.save(user=self.request.user)
 
 
-# class FollowViewSet(ListCreateViewSet):
-#     serializer_class = FollowSerializer
-#     permission_classes = (permissions.IsAuthenticated,)
-#     filter_backends = (filters.SearchFilter,)
-#     search_fields = ('user__username', 'following__username')
-
-#     def get_queryset(self):
-#         new_queryset = self.request.user.follower.select_related(
-#             'user', 'following'
-#         ).all()
-#         return new_queryset
-
-#     def perform_create(self, serializer):
-#         serializer.save(user=self.request.user)

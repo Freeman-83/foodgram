@@ -16,7 +16,7 @@ from recipes.models import (Favorite,
                             Tag,
                             TagRecipe)
 
-from user.models import CustomUser
+from users.models import CustomUser
 
 
 class Base64ImageField(serializers.ImageField):
@@ -46,6 +46,9 @@ class Hex2NameColor(serializers.Field):
 
 class CustomUserSerializer(UserSerializer):
     "Кастомный сериализатор для отбображения пользователей."
+    is_subscribed = serializers.BooleanField(
+        default=False
+    )
     
     class Meta:
         model = CustomUser
@@ -53,7 +56,8 @@ class CustomUserSerializer(UserSerializer):
                   'username',
                   'email',
                   'first_name',
-                  'last_name',)
+                  'last_name',
+                  'is_subscribed')
 
 
 class RegisterUserSerializer(UserCreateSerializer):
@@ -201,28 +205,11 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return recipe
 
 
-# class FavoriteSerializer(serializers.ModelSerializer):
-#     "Сериализатор для избранного"
-#     user = serializers.SlugRelatedField(
-#         read_only=True, slug_field='username'
-#     )
-#     recipe = serializers.PrimaryKeyRelatedField(read_only=True)
-
-#     class Meta:
-#         fields = ('id', 'user', 'recipe')
-#         model = Favorite
-#         validators = [
-#             UniqueTogetherValidator(
-#                 queryset=Favorite.objects.all(),
-#                 fields=['user', 'recipe']
-#             )
-#         ]
-
-
 # class SubscribeSerializer(serializers.ModelSerializer):
 #     "Сериализатор для подписки на автора."
 #     author = serializers.SlugRelatedField(
-#         queryset=CustomUser.objects.all(), slug_field='username'
+#         queryset=CustomUser.objects.all(),
+#         slug_field='username'
 #     )
 #     user = serializers.StringRelatedField(
 #         default=serializers.CurrentUserDefault()
@@ -241,6 +228,26 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 #     def validate_author(self, value):
 #         if value == self.context['request'].user:
 #             raise serializers.ValidationError(
-#                 'Запрет подписки пользователя на самого себя!'
+#                 'На себя, любимого, не подписываемся!'
 #             )
 #         return value
+
+# class FavoriteSerializer(serializers.ModelSerializer):
+#     "Сериализатор для избранного"
+#     user = serializers.SlugRelatedField(
+#         read_only=True, slug_field='username'
+#     )
+#     recipe = serializers.PrimaryKeyRelatedField(read_only=True)
+
+#     class Meta:
+#         fields = ('id', 'user', 'recipe')
+#         model = Favorite
+#         validators = [
+#             UniqueTogetherValidator(
+#                 queryset=Favorite.objects.all(),
+#                 fields=['user', 'recipe']
+#             )
+#         ]
+
+
+

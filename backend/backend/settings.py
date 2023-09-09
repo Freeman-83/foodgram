@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'djoser',
     'api.apps.ApiConfig',
     'recipes.apps.RecipesConfig',
-    'user.apps.UserConfig',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -137,7 +137,7 @@ DJOSER = {
     }
 }
 
-AUTH_USER_MODEL = 'user.CustomUser'
+AUTH_USER_MODEL = 'users.CustomUser'
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
