@@ -20,7 +20,7 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     "Модель ингредиента."
-    name = models.CharField('Ингредиент', unique=True, max_length=200)
+    name = models.CharField('Ингредиент', max_length=200)
     measurement_unit = models.CharField('Ед.изм', max_length=200)
 
     class Meta:
@@ -115,6 +115,30 @@ class IngredientRecipe(models.Model):
         return f'{self.ingredient} {self.recipe}'
 
 
+class Subscribe(models.Model):
+    "Модель подписок."
+    author = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='is_subscribed'
+    )
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='subscriptions'
+    )
+
+    class Meta:
+        ordering = ['-author']
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'user'],
+                                    name='unique_subscribe')
+        ]
+
+    def __str__(self):
+        return f'{self.author} {self.user}'
+
+
 class Favorite(models.Model):
     "Модель избранных рецептов пользователя."
     user = models.ForeignKey(
@@ -136,29 +160,6 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f'{self.recipe} {self.user}'
-
-
-class Subscribe(models.Model):
-    "Модель подписок."
-    author = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='is_subscribed'
-    )
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE
-    )
-
-    class Meta:
-        ordering = ['-author']
-        constraints = [
-            models.UniqueConstraint(fields=['author', 'user'],
-                                    name='unique_subscribe')
-        ]
-
-    def __str__(self):
-        return f'{self.author} {self.user}'
 
 
 class ShoppingCart(models.Model):

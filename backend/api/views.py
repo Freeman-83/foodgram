@@ -1,5 +1,8 @@
 from django.shortcuts import get_object_or_404
 
+from rest_framework import status
+from rest_framework.response import Response
+
 from rest_framework import filters, mixins, pagination, permissions, viewsets
 
 from recipes.models import (Favorite,
@@ -29,7 +32,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
 
@@ -48,18 +51,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 # class SubscribeViewSet(viewsets.ModelViewSet):
 #     serializer_class = SubscribeSerializer
-#     # permission_classes = (permissions.IsAuthenticated,)
-#     # filter_backends = (filters.SearchFilter,)
-#     # search_fields = ('user__username', 'following__username')
+#     queryset = Subscribe.objects.all()
+    # permission_classes = (permissions.IsAuthenticated,)
+    # filter_backends = (filters.SearchFilter,)
+    # search_fields = ('user__username', 'following__username')
 
-#     def get_queryset(self):
-#         new_queryset = self.request.user.follower.select_related(
-#             'user', 'author'
-#         ).all()
-#         return new_queryset
+    # def get_queryset(self):
+    #     new_queryset = self.request.user.subscriptions.select_related(
+    #         'user', 'author'
+    #     ).all()
+    #     return new_queryset
 
-#     def perform_create(self, serializer):
-#         serializer.save(user=self.request.user)
+    # def perform_create(self, serializer):
+    #     serializer.save(user=self.request.user)
 
 
 # class FavoriteViewSet(viewsets.ModelViewSet):
