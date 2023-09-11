@@ -119,8 +119,7 @@ class Subscribe(models.Model):
     "Модель подписок."
     author = models.ForeignKey(
         CustomUser,
-        on_delete=models.CASCADE,
-        related_name='is_subscribed'
+        on_delete=models.CASCADE
     )
     user = models.ForeignKey(
         CustomUser,

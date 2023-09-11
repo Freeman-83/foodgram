@@ -50,14 +50,15 @@ class CustomUserSerializer(UserSerializer):
     
     class Meta:
         model = CustomUser
-        fields = ('id',
-                  'username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'is_subscribed',
-                  'subscriptions')
-        extra_kwargs = {"subscriptions": {"read_only": True}}
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            # 'is_subscribed',
+            # 'recipes'
+        )
 
 
 class RegisterUserSerializer(UserCreateSerializer):
@@ -97,9 +98,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class TagRecipeSerializer(serializers.ModelSerializer):
     "Сериализатор тег-рецепт."
-    id = serializers.IntegerField(
-        source = 'tag.id'
-    )
+    # id = serializers.IntegerField(
+    #     source = 'tag.id'
+    # )
 
     class Meta:
         model = TagRecipe
@@ -110,8 +111,8 @@ class TagRecipeSerializer(serializers.ModelSerializer):
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     "Сериализатор ингредиент-рецепт."
-    id = serializers.PrimaryKeyRelatedField(
-        queryset = Ingredient.objects.all()
+    id = serializers.IntegerField(
+        source = 'ingredient.id'
     )
     name = serializers.CharField(
         source='ingredient.name',
@@ -137,7 +138,7 @@ class RecipeListRetrieveSerializer(serializers.ModelSerializer):
         source='ingredients_used'
     )
     tags = TagSerializer(
-        many=True
+        many=True,
     )
     author = CustomUserSerializer()
     
@@ -159,15 +160,19 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         many=True,
         source='ingredients_used'
     )
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(),
-        many=True
+    tags = TagSerializer(
+        # default=None,
+        many=True,
+        # source='tags_used'
     )
+    
+    # serializers.PrimaryKeyRelatedField(
+    #     queryset=Tag.objects.all(),
+    #     many=True
+    # )
+    
     image = Base64ImageField()
-    author = serializers.StringRelatedField(
-        default=serializers.CurrentUserDefault(),
-        read_only=True
-    )
+    author = CustomUserSerializer(default=None)
 
     class Meta:
         model = Recipe
@@ -189,7 +194,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients_used')
-        tags = validated_data.pop('tags')
+        tags_list = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
 
         for ingredient in ingredients_data:
@@ -199,37 +204,53 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             IngredientRecipe.objects.create(ingredient=current_ingredient,
                                             recipe=recipe,
                                             amount=amount)
-        recipe.tags.set(tags)
+            
+        for tag in tags_list:
+            TagRecipe.objects.create(tag=tag,
+                                     recipe=recipe)
+
+            # recipe.tags.add(tag)
 
         return recipe
 
 
-# class SubscribeSerializer(serializers.ModelSerializer):
-#     "Сериализатор для подписки на автора."
-    # author = serializers.SlugRelatedField(
+class SubscribeSerializer(serializers.ModelSerializer):
+    "Сериализатор для подписки на автора."
+    # user = serializers.PrimaryKeyRelatedField(
+    #     default=serializers.CurrentUserDefault(),
+    #     read_only=True
+    # )
+    # author = serializers.PrimaryKeyRelatedField(
     #     queryset=CustomUser.objects.all(),
-    #     slug_field='username'
     # )
-    # user = serializers.StringRelatedField(
-    #     default=serializers.CurrentUserDefault()
-    # )
+    # is_subscribed = serializers.BooleanField()
 
-    # class Meta:
-    #     fields = ('user', 'author')
-    #     model = Subscribe
-    #     validators = [
-    #         UniqueTogetherValidator(
-    #             queryset=Subscribe.objects.all(),
-    #             fields=['user', 'author']
-    #         )
-    #     ]
+    class Meta:
+        model = Subscribe
+        fields = ('user', 'author')
 
-    # def validate_author(self, value):
-    #     if value == self.context['request'].id:
-    #         raise serializers.ValidationError(
-    #             'На себя, любимого, не подписываемся!'
-    #         )
-    #     return value
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscribe.objects.all(),
+                fields=['user', 'author']
+            )
+        ]
+        
+    # def create(self, validated_data):
+    #     request = self.context['request']
+    #     author = self.context['view'].kwargs.get('id')
+    #     Subscribe.objects.create(user=request.user.id,
+    #                              author=author,
+    #                              is_subscribed=True)
+    #     return author
+
+    def validate_author(self, value):
+        author = self.context['view'].kwargs['pk']    
+        if value == author:
+            raise serializers.ValidationError(
+                'На себя, любимого, не подписываемся!'
+            )
+        return author
 
 
 # class FavoriteSerializer(serializers.ModelSerializer):
