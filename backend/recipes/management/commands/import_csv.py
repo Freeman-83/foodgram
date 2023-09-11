@@ -5,7 +5,9 @@ from recipes.models import Ingredient
 
 
 def import_data():
-    with open(f'{settings.BASE_DIR}/data/ingredients.csv') as csvfile:
+    with open(
+        f'{settings.BASE_DIR}/data/ingredients.csv', encoding='utf-8'
+    ) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             Ingredient.objects.create(
