@@ -101,12 +101,27 @@ class TagRecipeSerializer(serializers.ModelSerializer):
     # id = serializers.IntegerField(
     #     source = 'tag.id'
     # )
+    # name = serializers.CharField(
+    #     source = 'tag.name',
+    #     required=False
+    # )
+    # slug = serializers.SlugField(
+    #     source = 'tag.slug',
+    #      required=False
+    # )
+    # color = serializers.CharField(
+    #     source = 'tag.color',
+    #     required=False
+    # )
 
     class Meta:
         model = TagRecipe
         fields = ('id',
+                #   'name',
+                #   'slug',
+                #   'color',
                   'tag',
-                  'recipe')
+                  'recipe',)
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
@@ -160,10 +175,10 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         many=True,
         source='ingredients_used'
     )
-    tags = TagSerializer(
+    tags = TagRecipeSerializer(
         # default=None,
         many=True,
-        # source='tags_used'
+        source='tags_used'
     )
     
     # serializers.PrimaryKeyRelatedField(
@@ -216,13 +231,14 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
 class SubscribeSerializer(serializers.ModelSerializer):
     "Сериализатор для подписки на автора."
-    # user = serializers.PrimaryKeyRelatedField(
-    #     default=serializers.CurrentUserDefault(),
-    #     read_only=True
-    # )
-    # author = serializers.PrimaryKeyRelatedField(
-    #     queryset=CustomUser.objects.all(),
-    # )
+    user = serializers.PrimaryKeyRelatedField(
+        default=serializers.CurrentUserDefault(),
+        read_only=True
+    )
+    author = serializers.PrimaryKeyRelatedField(
+        # queryset=CustomUser.objects.all(),
+        read_only=True
+    )
     # is_subscribed = serializers.BooleanField()
 
     class Meta:
