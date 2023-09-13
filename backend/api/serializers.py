@@ -64,6 +64,7 @@ class CustomUserSerializer(UserSerializer):
 
 class RegisterUserSerializer(UserCreateSerializer):
     "Кастомный сериализатор для регистрации пользователя."
+    
     class Meta:
         model = CustomUser
         fields = ('id',
@@ -88,6 +89,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 class IngredientSerializer(serializers.ModelSerializer):
     "Сериализатор для ингредиентов."
+
     class Meta:
         model = Ingredient
         fields = ('id',

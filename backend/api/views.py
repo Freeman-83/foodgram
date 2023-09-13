@@ -25,24 +25,28 @@ from .serializers import (CustomUserSerializer,
 # from .permissions import AuthorOrReadOnly
 
 
-class ListCreateDeleteViewSet(mixins.ListModelMixin,
-                              mixins.CreateModelMixin,
-                              mixins.DestroyModelMixin,
-                              viewsets.GenericViewSet):
-    pass
+# class ListCreateDeleteViewSet(mixins.ListModelMixin,
+#                               mixins.CreateModelMixin,
+#                               mixins.DestroyModelMixin,
+#                               viewsets.GenericViewSet):
+#     pass
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.select_related('author').all()
+    # permission_classes = (permissions.IsAuthenticated,)
+    # pagination_class = pagination.PageNumberPagination
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_class = TitleFilterSet
 
     def get_serializer_class(self):
         if self.action in ['create', 'update']:
@@ -53,9 +57,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class SubscribeViewSet(ListCreateDeleteViewSet):
+class SubscribeViewSet(viewsets.ModelViewSet):
     serializer_class = SubscribeSerializer
-    # queryset = Subscribe.objects.all()
     # permission_classes = (permissions.IsAuthenticated,)
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('user__username', 'author__username')
@@ -67,7 +70,7 @@ class SubscribeViewSet(ListCreateDeleteViewSet):
 
     def get_queryset(self):
         queryset = self.request.user.subscriptions.select_related(
-            'author', 'user'
+            'user', 'author' 
         ).all()
         return queryset
 
@@ -84,11 +87,11 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     serializer_class = FavoriteSerializer
     # permission_classes = (permissions.IsAuthenticated,)
     # filter_backends = (filters.SearchFilter,)
-    # search_fields = ('user__username', 'following__username')
+    # search_fields = ('user__username', 'recipe__name')
 
     def get_queryset(self):
         new_queryset = self.request.user.favorites.select_related(
-            'user', 'favorites'
+            'user', 'recipe'
         ).all()
         return new_queryset
     
