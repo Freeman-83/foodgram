@@ -2,7 +2,8 @@ from django.urls import include, path
 
 from rest_framework import routers
 
-from .views import (IngredientViewSet,
+from .views import (FavoriteViewSet,
+                    IngredientViewSet,
                     RecipeViewSet,
                     SubscribeViewSet,
                     TagViewSet)
@@ -21,13 +22,13 @@ router.register('users/(?P<id>\d+)/subscribe',
                 SubscribeViewSet,
                 basename='subscribe')
 
-# router.register('recipes/<int:pk>/favorite/',
-#                 FavoriteViewSet,
-#                 basename='favorite')
-# router.register('recipes/<int:pk>/shopping_cart/',
+router.register('recipes/(?P<id>\d+)/favorite',
+                FavoriteViewSet,
+                basename='favorite')
+# router.register('recipes/(?P<id>\d+)/shopping_cart',
 #                 ShoppingCartViewSet,
 #                 basename='shopping_cart')
-# router.register('recipes/<int:pk>/download_shopping_cart/',
+# router.register('recipes/(?P<id>\d+)/download_shopping_cart',
 #                 ShoppingCartViewSet,
 #                 basename='download_shopping_cart')
 

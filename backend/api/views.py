@@ -15,19 +15,21 @@ from recipes.models import (Favorite,
 from users.models import CustomUser
 
 from .serializers import (CustomUserSerializer,
+                          FavoriteSerializer,
                           IngredientSerializer,
-                          RecipeListRetrieveSerializer,
                           RecipeCreateUpdateSerializer,
+                          RecipeListRetrieveSerializer,
                           SubscribeSerializer,
                           TagSerializer)
 
 # from .permissions import AuthorOrReadOnly
 
 
-# class ListRetrieveViewSet(mixins.ListModelMixin,
-#                           mixins.RetrieveModelMixin,
-#                           viewsets.GenericViewSet):
-#     pass
+class ListCreateDeleteViewSet(mixins.ListModelMixin,
+                              mixins.CreateModelMixin,
+                              mixins.DestroyModelMixin,
+                              viewsets.GenericViewSet):
+    pass
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
@@ -51,31 +53,47 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class SubscribeViewSet(viewsets.ModelViewSet):
-    queryset = Subscribe.objects.all()
+class SubscribeViewSet(ListCreateDeleteViewSet):
     serializer_class = SubscribeSerializer
+    # queryset = Subscribe.objects.all()
     # permission_classes = (permissions.IsAuthenticated,)
     # filter_backends = (filters.SearchFilter,)
     # search_fields = ('user__username', 'author__username')
 
-    # def get_queryset(self):
-    #     queryset = CustomUser.objects.get(id=self.kwargs.get('id'))
-    #     return queryset
+    # def get_serializer_class(self):
+    #     if self.action == 'list':
+    #         return CustomUserSerializer
+    #     return super().get_serializer_class()
+
+    def get_queryset(self):
+        queryset = self.request.user.subscriptions.select_related(
+            'author', 'user'
+        ).all()
+        return queryset
 
     def perform_create(self, serializer):
-        author = get_object_or_404(CustomUser, id=self.kwargs.get('id'))
+        author = get_object_or_404(CustomUser, pk=self.kwargs.get('id'))
         serializer.save(user=self.request.user,
-                        author=author)
+                        author=author,
+                        is_subscribed=True)
+        
+    # Не настроено удаление
 
 
-# class FavoriteViewSet(viewsets.ModelViewSet):
-#     serializer_class = FavoriteSerializer
-#     # permission_classes = (permissions.IsAuthenticated,)
-#     # filter_backends = (filters.SearchFilter,)
-#     search_fields = ('user__username', 'following__username')
+class FavoriteViewSet(viewsets.ModelViewSet):
+    serializer_class = FavoriteSerializer
+    # permission_classes = (permissions.IsAuthenticated,)
+    # filter_backends = (filters.SearchFilter,)
+    # search_fields = ('user__username', 'following__username')
 
-#     def get_queryset(self):
-#         new_queryset = self.request.user.follower.select_related(
-#             'user', 'following'
-#         ).all()
-#         return new_queryset
+    def get_queryset(self):
+        new_queryset = self.request.user.favorites.select_related(
+            'user', 'favorites'
+        ).all()
+        return new_queryset
+    
+    def perform_create(self, serializer):
+        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('id'))
+        serializer.save(user=self.request.user,
+                        recipe=recipe,
+                        is_favorite=True)

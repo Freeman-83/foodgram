@@ -80,7 +80,7 @@ class TagRecipe(models.Model):
     )
 
     class Meta:
-        ordering = ['-tag']
+        ordering = ['tag']
         constraints = [
             models.UniqueConstraint(fields=['tag', 'recipe'],
                                     name='unique_tag_recipe')
@@ -105,7 +105,7 @@ class IngredientRecipe(models.Model):
     amount = models.IntegerField('Количество')
 
     class Meta:
-        ordering = ['-ingredient']
+        ordering = ['ingredient']
         constraints = [
             models.UniqueConstraint(fields=['ingredient', 'recipe'],
                                     name='unique_ingredient_recipe')
@@ -117,64 +117,66 @@ class IngredientRecipe(models.Model):
 
 class Subscribe(models.Model):
     "Модель подписок."
-    author = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE
-    )
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
         related_name='subscriptions'
     )
+    author = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE
+    )
+    is_subscribed = models.BooleanField()
 
     class Meta:
-        ordering = ['-author']
+        ordering = ['author']
         constraints = [
-            models.UniqueConstraint(fields=['author', 'user'],
+            models.UniqueConstraint(fields=['user', 'author'],
                                     name='unique_subscribe')
         ]
 
     def __str__(self):
-        return f'{self.author} {self.user}'
+        return f'{self.user} {self.author}'
 
 
 class Favorite(models.Model):
     "Модель избранных рецептов пользователя."
     user = models.ForeignKey(
         CustomUser,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='favorites'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='is_favorite'
     )
+    is_favorite = models.BooleanField()
 
     class Meta:
-        ordering = ['-recipe']
+        ordering = ['recipe']
         constraints = [
             models.UniqueConstraint(fields=['user', 'recipe'],
                                     name='unique_favorite')
         ]
 
     def __str__(self):
-        return f'{self.recipe} {self.user}'
+        return f'{self.user} {self.recipe}'
 
 
 class ShoppingCart(models.Model):
     "Модель списка покупок."
     user = models.ForeignKey(
         CustomUser,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='shopping_cart'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE,
-        related_name='is_in_shopping_cart'
+        on_delete=models.CASCADE
     )
 
     class Meta:
-        ordering = ['-recipe']
+        ordering = ['recipe']
         constraints = [
             models.UniqueConstraint(fields=['user', 'recipe'],
                                     name='unique_recipe_for_shopping')
