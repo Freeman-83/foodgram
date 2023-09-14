@@ -19,6 +19,7 @@ from .serializers import (CustomUserSerializer,
                           IngredientSerializer,
                           RecipeCreateUpdateSerializer,
                           RecipeListRetrieveSerializer,
+                          ShoppingCartSerializer,
                           SubscribeSerializer,
                           TagSerializer)
 
@@ -94,9 +95,28 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             'user', 'recipe'
         ).all()
         return new_queryset
-    
+
     def perform_create(self, serializer):
         recipe = get_object_or_404(Recipe, pk=self.kwargs.get('id'))
         serializer.save(user=self.request.user,
                         recipe=recipe,
                         is_favorite=True)
+        
+        
+class ShoppingCartViewSet(viewsets.ModelViewSet):
+    serializer_class = ShoppingCartSerializer
+    # permission_classes = (permissions.IsAuthenticated,)
+    # filter_backends = (filters.SearchFilter,)
+    # search_fields = ('user__username', 'recipe__name')
+
+    def get_queryset(self):
+        new_queryset = self.request.user.shopping_cart.select_related(
+            'user', 'recipe'
+        ).all()
+        return new_queryset
+    
+    def perform_create(self, serializer):
+        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('id'))
+        serializer.save(user=self.request.user,
+                        recipe=recipe,
+                        is_in_shopping_cart=True)

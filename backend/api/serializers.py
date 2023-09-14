@@ -1,6 +1,7 @@
 import base64
 import webcolors
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -48,6 +49,7 @@ class Hex2NameColor(serializers.Field):
 class CustomUserSerializer(UserSerializer):
     "Кастомный сериализатор для отбображения пользователей."
     # is_subscribed = serializers.BooleanField()
+    # recipes = RecipeListRetrieveSerializer()
 
     class Meta:
         model = CustomUser
@@ -193,7 +195,8 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         for ingredient in ingredients_data:
             current_ingredient = ingredient.get('id')
             amount = ingredient.get('amount')
-            IngredientRecipe.objects.create(ingredient=current_ingredient,
+            IngredientRecipe.objects.create(id=current_ingredient.id,
+                                            ingredient=current_ingredient,
                                             recipe=recipe,
                                             amount=amount)
             
@@ -216,6 +219,9 @@ class RecipeListRetrieveSerializer(serializers.ModelSerializer):
         many=True,
     )
     author = CustomUserSerializer()
+
+    is_favorite = serializers.BooleanField()
+    is_in_shopping_cart = serializers.BooleanField()
     
     class Meta:
         model = Recipe
@@ -226,13 +232,15 @@ class RecipeListRetrieveSerializer(serializers.ModelSerializer):
                   'author',
                   'name',
                   'text',
-                  'cooking_time')
+                  'cooking_time',
+                  'is_favorite',
+                  'is_in_shopping_cart')
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
     "Сериализатор для подписки на автора."
     # id = serializers.IntegerField(source='author.id', read_only=True)
-    # username = serializers.CharField(source='author.username', read_only=True)
+    username = serializers.CharField(source='author.username', read_only=True)
     # email = serializers.EmailField(source='author.email', read_only=True)
     # first_name = serializers.CharField(source='author.first_name', read_only=True)
     # last_name = serializers.CharField(source='author.last_name', read_only=True)
@@ -243,7 +251,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscribe
         fields = (#'id',
-                #   'username',
+                  'username',
                 #   'email',
                 #   'first_name',
                 #   'last_name',
@@ -259,13 +267,15 @@ class SubscribeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         user = request.user
-        author = self.context['view'].kwargs.get('id')
-        
+        author = get_object_or_404(
+            CustomUser, pk=self.context['view'].kwargs.get('id')
+        )
+
         if request.method == 'POST':
-            if Subscribe.objects.filter(user=user, author=author):
-                raise ValidationError('Один автор - одна подписка!')
-            elif Subscribe.objects.filter(user=author):
+            if user == author:
                 raise ValidationError('На себя, любимого, не подписываемся!')
+            elif Subscribe.objects.filter(user=user, author=author):
+                raise ValidationError('Один автор - одна подписка!')
         return data
 
 
@@ -280,17 +290,40 @@ class FavoriteSerializer(serializers.ModelSerializer):
         def validate(self, data):
             request = self.context['request']
             user = request.user
-            recipe = self.context['view'].kwargs.get('id')
-            
+            recipe = get_object_or_404(
+                Recipe, pk=self.context['view'].kwargs.get('id')
+            )
+
             if request.method == 'POST':
-                if Favorite.objects.filter(user=user, recipe=recipe):
-                    raise ValidationError(
-                        'Ошибка: повторное добавление рецепта в избранное!'
-                    )
-                elif Favorite.objects.filter(user=recipe):
+                if user == recipe.author:
                     raise ValidationError(
                         'Свои рецепты в избранное не добавляем!'
                     )
+                elif Favorite.objects.filter(user=user, recipe=recipe):
+                    raise ValidationError(
+                        'Ошибка: повторное добавление рецепта в избранное!'
+                    )
             return data
 
-# Нужен ли отдельный сериализатор для Корзины покупок???
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    "Сериализатор для корзины покупок."
+    is_in_shopping_cart = serializers.BooleanField(read_only=True)
+    
+    class Meta:
+        model = ShoppingCart
+        fields = ('is_in_shopping_cart',)
+        
+        def validate(self, data):
+            request = self.context['request']
+            user = request.user
+            recipe = get_object_or_404(
+                Recipe, pk=self.context['view'].kwargs.get('id')
+            )
+
+            if request.method == 'POST':
+                if ShoppingCart.objects.filter(user=user, recipe=recipe):
+                    raise ValidationError(
+                        'Ошибка: повторное добавление рецепта в корзину!'
+                    )
+            return data

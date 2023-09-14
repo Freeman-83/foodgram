@@ -5,6 +5,7 @@ from rest_framework import routers
 from .views import (FavoriteViewSet,
                     IngredientViewSet,
                     RecipeViewSet,
+                    ShoppingCartViewSet,
                     SubscribeViewSet,
                     TagViewSet)
 
@@ -21,13 +22,12 @@ router.register('users/subscriptions',
 router.register('users/(?P<id>\d+)/subscribe',
                 SubscribeViewSet,
                 basename='subscribe')
-
 router.register('recipes/(?P<id>\d+)/favorite',
                 FavoriteViewSet,
                 basename='favorite')
-# router.register('recipes/(?P<id>\d+)/shopping_cart',
-#                 ShoppingCartViewSet,
-#                 basename='shopping_cart')
+router.register('recipes/(?P<id>\d+)/shopping_cart',
+                ShoppingCartViewSet,
+                basename='shopping_cart')
 # router.register('recipes/(?P<id>\d+)/download_shopping_cart',
 #                 ShoppingCartViewSet,
 #                 basename='download_shopping_cart')

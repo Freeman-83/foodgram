@@ -124,7 +124,8 @@ class Subscribe(models.Model):
     )
     author = models.ForeignKey(
         CustomUser,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='is_subscribed'
     )
     is_subscribed = models.BooleanField()
 
@@ -140,7 +141,7 @@ class Subscribe(models.Model):
 
 
 class Favorite(models.Model):
-    "Модель избранных рецептов пользователя."
+    "Модель избранных рецептов и корзины пользователя."
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -149,14 +150,16 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
+        related_name='is_favorite'
     )
     is_favorite = models.BooleanField()
 
     class Meta:
         ordering = ['recipe']
         constraints = [
-            models.UniqueConstraint(fields=['user', 'recipe'],
-                                    name='unique_favorite')
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite')
         ]
 
     def __str__(self):
@@ -172,8 +175,10 @@ class ShoppingCart(models.Model):
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='is_in_shopping_cart'
     )
+    is_in_shopping_cart = models.BooleanField()
 
     class Meta:
         ordering = ['recipe']
@@ -183,4 +188,4 @@ class ShoppingCart(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.recipe} {self.user}'
+        return f'{self.user} {self.recipe}'
