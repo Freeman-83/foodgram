@@ -153,9 +153,8 @@ class Favorite(models.Model):
     class Meta:
         ordering = ['recipe']
         constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite')
+            models.UniqueConstraint(fields=['user', 'recipe'],
+                                    name='unique_favorite')
         ]
 
     def __str__(self):
