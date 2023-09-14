@@ -124,10 +124,8 @@ class Subscribe(models.Model):
     )
     author = models.ForeignKey(
         CustomUser,
-        on_delete=models.CASCADE,
-        related_name='is_subscribed'
+        on_delete=models.CASCADE
     )
-    is_subscribed = models.BooleanField()
 
     class Meta:
         ordering = ['author']
@@ -149,10 +147,8 @@ class Favorite(models.Model):
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE,
-        related_name='is_favorite'
+        on_delete=models.CASCADE
     )
-    is_favorite = models.BooleanField()
 
     class Meta:
         ordering = ['recipe']
@@ -175,10 +171,8 @@ class ShoppingCart(models.Model):
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE,
-        related_name='is_in_shopping_cart'
+        on_delete=models.CASCADE
     )
-    is_in_shopping_cart = models.BooleanField()
 
     class Meta:
         ordering = ['recipe']

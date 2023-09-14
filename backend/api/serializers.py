@@ -48,8 +48,8 @@ class Hex2NameColor(serializers.Field):
 
 class CustomUserSerializer(UserSerializer):
     "Кастомный сериализатор для отбображения пользователей."
-    # is_subscribed = serializers.BooleanField()
-    # recipes = RecipeListRetrieveSerializer()
+    is_subscribed = serializers.SerializerMethodField()
+    # recipes = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -59,9 +59,20 @@ class CustomUserSerializer(UserSerializer):
             'email',
             'first_name',
             'last_name',
-            # 'is_subscribed',
+            'is_subscribed',
             # 'recipes'
         )
+
+    def get_is_subscribed(self, author):
+        user = self.context['request'].user.id
+        if Subscribe.objects.filter(user=user, author=author):
+            return True
+        return False
+    
+    # def get_recipes(self, user):
+    #     obj = Recipe.objects.filter(author=user)
+    #     serialized_obj = serializers.Serializer('json', [ obj, ])
+    #     return serialized_obj
 
 
 class RegisterUserSerializer(UserCreateSerializer):
@@ -159,12 +170,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(),
         many=True
     )
-
-    # TagRecipeSerializer(
-    #     # default=None,
-    #     many=True,
-    #     source='tags_used'
-    # )
     
     image = Base64ImageField()
     author = CustomUserSerializer(
@@ -220,8 +225,8 @@ class RecipeListRetrieveSerializer(serializers.ModelSerializer):
     )
     author = CustomUserSerializer()
 
-    is_favorite = serializers.BooleanField()
-    is_in_shopping_cart = serializers.BooleanField()
+    is_favorite = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
     
     class Meta:
         model = Recipe
@@ -235,34 +240,33 @@ class RecipeListRetrieveSerializer(serializers.ModelSerializer):
                   'cooking_time',
                   'is_favorite',
                   'is_in_shopping_cart')
+        
+    def get_is_favorite(self, recipe):
+        user = self.context['request'].user.id
+        if Favorite.objects.filter(user=user, recipe=recipe):
+            return True
+        return False
+    
+    def get_is_in_shopping_cart(self, recipe):
+        user = self.context['request'].user.id
+        if ShoppingCart.objects.filter(user=user, recipe=recipe):
+            return True
+        return False
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
     "Сериализатор для подписки на автора."
-    # id = serializers.IntegerField(source='author.id', read_only=True)
-    username = serializers.CharField(source='author.username', read_only=True)
-    # email = serializers.EmailField(source='author.email', read_only=True)
-    # first_name = serializers.CharField(source='author.first_name', read_only=True)
-    # last_name = serializers.CharField(source='author.last_name', read_only=True)
-    is_subscribed = serializers.BooleanField(read_only=True)
-    # recipes = serializers.PrimaryKeyRelatedField(
-    #     many=True, source='author.recipes', read_only=True)
+    # user = serializers.PrimaryKeyRelatedField(
+    #     read_only=True
+    # )
+    author = CustomUserSerializer(
+        read_only=True
+    )
 
     class Meta:
         model = Subscribe
-        fields = (#'id',
-                  'username',
-                #   'email',
-                #   'first_name',
-                #   'last_name',
-                #   'recipes'
-                  'is_subscribed',)
-        # read_only_fields = ('id',
-        #                     'username',
-        #                     'email',
-        #                     'first_name',
-        #                     'last_name',
-        #                     'recipes')
+        exclude = ('id', 'user')
+        depth = 1
 
     def validate(self, data):
         request = self.context['request']
@@ -281,11 +285,10 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     "Сериализатор для избранного"
-    is_favorite = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Favorite
-        fields = ('is_favorite',)
+        fields = ('recipe',)
 
         def validate(self, data):
             request = self.context['request']
@@ -301,18 +304,17 @@ class FavoriteSerializer(serializers.ModelSerializer):
                     )
                 elif Favorite.objects.filter(user=user, recipe=recipe):
                     raise ValidationError(
-                        'Ошибка: повторное добавление рецепта в избранное!'
+                        'Повторное добавление рецепта в избранное!'
                     )
             return data
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
     "Сериализатор для корзины покупок."
-    is_in_shopping_cart = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = ShoppingCart
-        fields = ('is_in_shopping_cart',)
+        fields = ('recipe',)
         
         def validate(self, data):
             request = self.context['request']

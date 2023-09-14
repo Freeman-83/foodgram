@@ -44,15 +44,20 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.select_related('author').all()
+    serializer_class = RecipeCreateUpdateSerializer
     # permission_classes = (permissions.IsAuthenticated,)
     # pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
 
     def get_serializer_class(self):
-        if self.action in ['create', 'update']:
-            return RecipeCreateUpdateSerializer
-        return RecipeListRetrieveSerializer
+        if self.action in ['list', 'retrive']:
+            return RecipeListRetrieveSerializer
+        return super().get_serializer_class()
+    
+    def update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -78,9 +83,8 @@ class SubscribeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         author = get_object_or_404(CustomUser, pk=self.kwargs.get('id'))
         serializer.save(user=self.request.user,
-                        author=author,
-                        is_subscribed=True)
-        
+                        author=author)
+
     # Не настроено удаление
 
 
@@ -99,8 +103,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         recipe = get_object_or_404(Recipe, pk=self.kwargs.get('id'))
         serializer.save(user=self.request.user,
-                        recipe=recipe,
-                        is_favorite=True)
+                        recipe=recipe)
         
         
 class ShoppingCartViewSet(viewsets.ModelViewSet):
@@ -118,5 +121,4 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         recipe = get_object_or_404(Recipe, pk=self.kwargs.get('id'))
         serializer.save(user=self.request.user,
-                        recipe=recipe,
-                        is_in_shopping_cart=True)
+                        recipe=recipe)
