@@ -44,23 +44,27 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.select_related('author').all()
-    serializer_class = RecipeCreateUpdateSerializer
+    # serializer_class = RecipeCreateUpdateSerializer
     # permission_classes = (permissions.IsAuthenticated,)
     # pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
 
     def get_serializer_class(self):
-        if self.action in ['list', 'retrive']:
-            return RecipeListRetrieveSerializer
-        return super().get_serializer_class()
+        if self.action in ['create', 'partial_update']:
+            return RecipeCreateUpdateSerializer
+        return RecipeListRetrieveSerializer
+
+    # def update(self, request, *args, **kwargs):
+    #     kwargs['partial'] = True
+    #     return super().update(request, *args, **kwargs)
     
-    def update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return super().update(request, *args, **kwargs)
+    def perform_update(self, serializer):
+        serializer.save(**self.request.data)
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        tags = self.request.data['tags']
+        serializer.save(tags=tags)
 
 
 class SubscribeViewSet(viewsets.ModelViewSet):
