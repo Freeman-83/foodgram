@@ -46,10 +46,20 @@ class Hex2NameColor(serializers.Field):
         return data
 
 
-class CustomUserSerializer(UserSerializer):
-    "Кастомный сериализатор для отбображения пользователей."
+class RecipeContextSerializer(serializers.ModelSerializer):
+    "Сериализатор для отображения профиля рецепта в других контекстах."
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class CustomUserContextSerializer(UserSerializer):
+    """ Кастомный сериализатор для отображения профиля пользователя 
+    в других контекстах."""
     is_subscribed = serializers.SerializerMethodField()
-    recipes = serializers.SerializerMethodField()
+    recipes = RecipeContextSerializer(many=True)
+    recipes_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = CustomUser
@@ -60,18 +70,33 @@ class CustomUserSerializer(UserSerializer):
             'first_name',
             'last_name',
             'is_subscribed',
-            'recipes'
+            'recipes',
+            'recipes_count'
         )
 
     def get_is_subscribed(self, author):
         user = self.context['request'].user
-        if Subscribe.objects.filter(user=user, author=author):
-            return True
-        return False
-    
-    def get_recipes(self, user):
-        recipes = user.recipes.values()
-        return recipes
+        return Subscribe.objects.filter(user=user, author=author).exists()
+
+
+class CustomUserSerializer(UserSerializer):
+    "Кастомный сериализатор для пользователей."
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'is_subscribed'
+        )
+
+    def get_is_subscribed(self, author):
+        user = self.context['request'].user
+        return Subscribe.objects.filter(user=user, author=author).exists()
 
 
 class RegisterUserSerializer(UserCreateSerializer):
@@ -110,7 +135,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
-    "Сериализатор ингредиент-рецепт."
+    "Сериализатор для ингредиента-рецепта."
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
     )
@@ -199,150 +224,31 @@ class RecipeSerializer(serializers.ModelSerializer):
     
     def get_is_favorite(self, recipe):
         user = self.context['request'].user
-        if Favorite.objects.filter(user=user, recipe=recipe):
-            return True
-        return False
+        return Favorite.objects.filter(user=user, recipe=recipe).exists()
     
     def get_is_in_shopping_cart(self, recipe):
         user = self.context['request'].user
-        if ShoppingCart.objects.filter(user=user, recipe=recipe):
-            return True
-        return False
-    
-
-class RecipeShortSerializer(serializers.ModelSerializer):
-    "Сериализатор для отображения в других контекстах."
-
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
+        return ShoppingCart.objects.filter(user=user, recipe=recipe).exists()
 
 
-# class RecipeListRetrieveSerializer(serializers.ModelSerializer):
-#     "Сериализатор для получения рецептов."
-#     ingredients = IngredientRecipeSerializer(
-#         many=True,
-#         source='ingredients_used'
-#     )
-#     tags = TagSerializer(
-#         many=True,
-#     )
-#     author = CustomUserSerializer()
-
-#     is_favorite = serializers.SerializerMethodField()
-#     is_in_shopping_cart = serializers.SerializerMethodField()
+# class ShoppingCartSerializer(serializers.ModelSerializer):
+#     "Сериализатор для корзины покупок."
+#     recipe = RecipeInfoSerializer(read_only=True)
     
 #     class Meta:
-#         model = Recipe
-#         fields = ('id',
-#                   'ingredients',
-#                   'tags',
-#                   'image',
-#                   'author',
-#                   'name',
-#                   'text',
-#                   'cooking_time',
-#                   'is_favorite',
-#                   'is_in_shopping_cart')
+#         model = ShoppingCart
+#         fields = ('recipe',)
         
-#     def get_is_favorite(self, recipe):
-#         user = self.context['request'].user
-#         if Favorite.objects.filter(user=user, recipe=recipe):
-#             return True
-#         return False
-    
-#     def get_is_in_shopping_cart(self, recipe):
-#         user = self.context['request'].user
-#         if ShoppingCart.objects.filter(user=user, recipe=recipe):
-#             return True
-#         return False
+#     def validate(self, data):
+#         request = self.context['request']
+#         user = request.user
+#         recipe = get_object_or_404(
+#             Recipe, pk=self.context['view'].kwargs.get('id')
+#         )
 
-
-class SubscribeSerializer(serializers.ModelSerializer):
-    "Сериализатор для подписки на автора."
-    author = CustomUserSerializer(
-        read_only=True
-    )
-
-    class Meta:
-        model = Subscribe
-        fields = ('author',)
-
-    def validate(self, data):
-        request = self.context['request']
-        user = request.user
-        author = get_object_or_404(
-            CustomUser, pk=self.context['view'].kwargs.get('id')
-        )
-
-        if request.method == 'POST':
-            if user == author:
-                raise ValidationError('На себя, любимого, не подписываемся!')
-            elif Subscribe.objects.filter(user=user, author=author):
-                raise ValidationError('Один автор - одна подписка!')
-        elif request.method == 'DELETE':
-            if not Subscribe.objects.filter(user=user, author=author):
-                raise ValidationError('Сначала подписка - потом удаление!')
-        return data
-    
-    # def to_representation(self, instance):
-    #     # data = instance.author
-    #     data = {
-    #         'id': instance.author.id,
-    #         'username': instance.author.username,
-    #         'email': instance.author.email,
-    #         'first_name': instance.author.first_name,
-    #         'last_name': instance.author.last_name,
-    #         'recipes': instance.author.recipes.values()
-    #     }
-    #     return data
-
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    "Сериализатор для избранного"
-    recipe = RecipeShortSerializer(read_only=True)
-
-    class Meta:
-        model = Favorite
-        fields = ('recipe',)
-
-    def validate(self, data):
-        request = self.context['request']
-        user = request.user
-        recipe = get_object_or_404(
-            Recipe, pk=self.context['view'].kwargs.get('id')
-        )
-
-        if request.method == 'POST':
-            if user == recipe.author:
-                raise ValidationError(
-                    'Свои рецепты в избранное не добавляем!'
-                )
-            elif Favorite.objects.filter(user=user, recipe=recipe):
-                raise ValidationError(
-                    'Повторное добавление рецепта в избранное!'
-                )
-        return data
-
-
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    "Сериализатор для корзины покупок."
-    recipe = RecipeShortSerializer(read_only=True)
-    
-    class Meta:
-        model = ShoppingCart
-        fields = ('recipe',)
-        
-    def validate(self, data):
-        request = self.context['request']
-        user = request.user
-        recipe = get_object_or_404(
-            Recipe, pk=self.context['view'].kwargs.get('id')
-        )
-
-        if request.method == 'POST':
-            if ShoppingCart.objects.filter(user=user, recipe=recipe):
-                raise ValidationError(
-                    'Повторное добавление рецепта в корзину!'
-                )
-        return data
+#         if request.method == 'POST':
+#             if ShoppingCart.objects.filter(user=user, recipe=recipe):
+#                 raise ValidationError(
+#                     'Повторное добавление рецепта в корзину!'
+#                 )
+#         return data
