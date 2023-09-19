@@ -82,7 +82,6 @@ class CustomUserContextSerializer(UserSerializer):
 
 class CustomUserSerializer(UserSerializer):
     "Кастомный сериализатор для пользователей."
-
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -103,7 +102,6 @@ class CustomUserSerializer(UserSerializer):
 
 class RegisterUserSerializer(UserCreateSerializer):
     "Кастомный сериализатор для регистрации пользователя."
-    
     class Meta:
         model = CustomUser
         fields = ('id',
@@ -116,7 +114,6 @@ class RegisterUserSerializer(UserCreateSerializer):
 
 class TagSerializer(serializers.ModelSerializer):
     "Сериализатор для тегов."
-
     color = Hex2NameColor()
 
     class Meta:
@@ -139,7 +136,6 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     "Сериализатор для ингредиента-рецепта."
-
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
     )
@@ -162,7 +158,6 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     "Сериализатор для создания-обновления рецептов."
-
     ingredients = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
     image = Base64ImageField()

@@ -90,8 +90,9 @@ class CustomUserViewSet(UserViewSet):
     @action(detail=False,
             permission_classes=[permissions.IsAuthenticated,])
     def subscriptions(self, request):
-        user = self.request.user
-        subscribers_data = CustomUser.objects.filter(subscribers__user=user)
+        subscribers_data = CustomUser.objects.filter(
+            subscribers__user=request.user
+        )
         page = self.paginate_queryset(subscribers_data)
         if page:
             serializer = CustomUserContextSerializer(
@@ -105,16 +106,20 @@ class CustomUserViewSet(UserViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    "Вьюсет для Тегов."
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    "Вьюсет для ингредиентов."
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    pagination_class = pagination.PageNumberPagination
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    "Вьюсет для рецептов."
     queryset = Recipe.objects.select_related(
             'author'
         ).prefetch_related(
@@ -202,55 +207,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         @action(detail=False)
         def download_shopping_cart(self, request):
             pass
-
-
-# class SubscribeViewSet(viewsets.ModelViewSet):
-#     serializer_class = SubscribeSerializer
-    # permission_classes = (permissions.IsAuthenticated,)
-    # filter_backends = (filters.SearchFilter,)
-    # search_fields = ('user__username', 'author__username')
-    # http_method_names = ('get', 'post', 'delete')
-    # lookup_field = 'subscribe'
-
-    # def get_serializer_class(self):
-    #     if self.action == 'list':
-    #         return CustomUserSerializer
-    #     return super().get_serializer_class()
-
-    # def get_queryset(self):
-    #     queryset = self.request.user.subscriptions.select_related(
-    #         'user', 'author'
-    #     ).all()
-    #     return queryset
-
-    # def perform_create(self, serializer):
-    #     author = get_object_or_404(CustomUser, pk=self.kwargs.get('id'))
-    #     serializer.save(user=self.request.user,
-    #                     author=author)
-        
-    # def destroy(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     self.perform_destroy(instance)
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # def perform_destroy(self, instance):
-    #     instance.delete()
-
-    # @action(methods=['post', 'delete'], detail=True)
-    # def subscribe(self, request):
-    #     author = get_object_or_404(CustomUser, pk=self.kwargs.get('id'))
-    #     obj = CustomUser.objects.filter(user=request.user,
-    #                                     author=author)
-    #     serializer = self.get_serializer(obj, many=True)
-    #     return Response(serializer.data)
-
-    # def perform_destroy(self, instance):
-    #     if self.request.method == 'delete':
-    #         instance = self.get_object()
-    #         instance.delete()
-    #     return super().perform_destroy(instance)
-
-    # Не настроено удаление
         
 # class ShoppingCartViewSet(viewsets.ModelViewSet):
 #     serializer_class = ShoppingCartSerializer
