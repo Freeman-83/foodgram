@@ -17,8 +17,8 @@ router.register('tags', TagViewSet)
 router.register('ingredients', IngredientViewSet)
 router.register('users', CustomUserViewSet)
 # router.register('users/subscriptions',
-#                 SubscribeViewSet,
-#                 basename='subscriptions')
+#                 CustomUserViewSet,
+#                 basename='subscriptions-list')
 # router.register('users/(?P<id>\d+)/subscribe',
 #                 SubscribeViewSet,
 #                 basename='subscribe')

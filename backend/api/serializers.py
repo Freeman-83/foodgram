@@ -218,6 +218,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     #         instance = Recipe.objects.update_or_create(**validated_data)
 
     #     return instance
+
     def get_ingredients(self, recipe):
         return recipe.ingredients.values()
 

@@ -43,25 +43,35 @@ class CustomUserViewSet(UserViewSet):
         ).annotate(
             recipes_count=Count('recipes')
         ).all()
-    # permission_classes = (permissions.IsAuthenticated,)
-    # pagination_class = pagination.PageNumberPagination
+    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
 
 
-    @action(methods=['post', 'delete'], detail=True, url_path='subscribe')
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(CustomUser, pk=pk)
+    @action(methods=['post', 'delete'],
+            detail=True,
+            permission_classes=[permissions.IsAuthenticated,])
+    def subscribe(self, request, id=None):
+        author = get_object_or_404(CustomUser, pk=id)
         subscribe_obj = Subscribe.objects.filter(user=request.user,
                                                  author=author)
 
         if request.method == 'POST':
             if not subscribe_obj.exists():
-                Subscribe.objects.create(user=request.user,
-                                         author=author)
-                serializer = CustomUserContextSerializer(author)
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
+                if author != request.user:
+                    Subscribe.objects.create(user=request.user,
+                                             author=author)
+                    serializer = CustomUserContextSerializer(
+                        author, context={'request': request}
+                    )
+                    return Response(
+                        serializer.data,
+                        status=status.HTTP_201_CREATED)
+                return Response(
+                    data={'errors': 'Подписка на себя запрещена!'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(
                 data = {'errors': 'Повторная подписка на пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -77,13 +87,20 @@ class CustomUserViewSet(UserViewSet):
             )
 
 
-    @action(detail=False)
+    @action(detail=False,
+            permission_classes=[permissions.IsAuthenticated,])
     def subscriptions(self, request):
-        authors = CustomUser.objects.all()
-        subscription_data = request.user.subscriptions.filter(user=request.user)
-
-
-        serializer = CustomUserContextSerializer(subscription_data, many=True)
+        user = self.request.user
+        subscribers_data = CustomUser.objects.filter(subscribers__user=user)
+        page = self.paginate_queryset(subscribers_data)
+        if page:
+            serializer = CustomUserContextSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+        serializer = CustomUserContextSerializer(
+                subscribers_data, many=True, context={'request': request}
+            )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -104,8 +121,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'tags', 'ingredients'
         ).all()
     serializer_class = RecipeSerializer
-    # permission_classes = (permissions.IsAuthenticated,)
-    # pagination_class = pagination.PageNumberPagination
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
 
@@ -125,7 +142,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     # Не настроено изменение ингредиентов!
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=['post', 'delete'],
+            detail=True,
+            permission_classes=[permissions.IsAuthenticated,])
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         favorite_obj = Favorite.objects.filter(user=request.user,
@@ -153,7 +172,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=['post', 'delete'],
+            detail=True,
+            permission_classes=[permissions.IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         shopping_cart_obj = ShoppingCart.objects.filter(user=request.user,

@@ -124,7 +124,8 @@ class Subscribe(models.Model):
     )
     author = models.ForeignKey(
         CustomUser,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='subscribers'
     )
 
     class Meta:
