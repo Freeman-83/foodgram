@@ -49,11 +49,11 @@ class CustomUserViewSet(UserViewSet):
     # filterset_class = TitleFilterSet
 
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=['post', 'delete'], detail=True, url_path='subscribe')
     def subscribe(self, request, pk=None):
-        author = get_object_or_404(CustomUser, id=pk)
+        author = get_object_or_404(CustomUser, pk=pk)
         subscribe_obj = Subscribe.objects.filter(user=request.user,
-                                             author=author)
+                                                 author=author)
 
         if request.method == 'POST':
             if not subscribe_obj.exists():
@@ -113,8 +113,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(**self.request.data)
 
     def perform_create(self, serializer):
+        ingredients = self.request.data['ingredients']
         tags = self.request.data['tags']
-        serializer.save(tags=tags,
+        serializer.save(ingredients=ingredients,
+                        tags=tags,
                         author=self.request.user)
         
     # def update(self, request, *args, **kwargs):
