@@ -15,8 +15,7 @@ from recipes.models import (Favorite,
                             IngredientRecipe,
                             ShoppingCart,
                             Subscribe,
-                            Tag,
-                            TagRecipe)
+                            Tag)
 
 from users.models import CustomUser
 
@@ -54,32 +53,6 @@ class RecipeContextSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class CustomUserContextSerializer(UserSerializer):
-    """ Кастомный сериализатор для отображения профиля пользователя 
-    в других контекстах."""
-
-    is_subscribed = serializers.SerializerMethodField()
-    recipes = RecipeContextSerializer(many=True)
-    recipes_count = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = CustomUser
-        fields = (
-            'id',
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count'
-        )
-
-    def get_is_subscribed(self, author):
-        user = self.context['request'].user
-        return Subscribe.objects.filter(user=user, author=author).exists()
-
-
 class CustomUserSerializer(UserSerializer):
     "Кастомный сериализатор для пользователей."
     is_subscribed = serializers.SerializerMethodField()
@@ -102,6 +75,7 @@ class CustomUserSerializer(UserSerializer):
 
 class RegisterUserSerializer(UserCreateSerializer):
     "Кастомный сериализатор для регистрации пользователя."
+    
     class Meta:
         model = CustomUser
         fields = ('id',
@@ -110,6 +84,31 @@ class RegisterUserSerializer(UserCreateSerializer):
                   'first_name',
                   'last_name',
                   'password')
+
+
+class CustomUserContextSerializer(UserSerializer):
+    """ Кастомный сериализатор для отображения профиля пользователя 
+    в других контекстах."""
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = RecipeContextSerializer(many=True)
+    recipes_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
+    def get_is_subscribed(self, author):
+        user = self.context['request'].user
+        return Subscribe.objects.filter(user=user, author=author).exists()
 
 
 class TagSerializer(serializers.ModelSerializer):

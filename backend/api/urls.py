@@ -5,7 +5,6 @@ from rest_framework import routers
 from .views import (CustomUserViewSet,
                     IngredientViewSet,
                     RecipeViewSet,
-                    # SubscribeViewSet,
                     TagViewSet)
 
 app_name = 'api'
@@ -16,12 +15,7 @@ router.register('recipes', RecipeViewSet)
 router.register('tags', TagViewSet)
 router.register('ingredients', IngredientViewSet)
 router.register('users', CustomUserViewSet)
-# router.register('users/subscriptions',
-#                 CustomUserViewSet,
-#                 basename='subscriptions-list')
-# router.register('users/(?P<id>\d+)/subscribe',
-#                 SubscribeViewSet,
-#                 basename='subscribe')
+
 # router.register('recipes/(?P<id>\d+)/download_shopping_cart',
 #                 ShoppingCartViewSet,
 #                 basename='download_shopping_cart')

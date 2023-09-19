@@ -23,7 +23,6 @@ from .serializers import (CustomUserSerializer,
                           IngredientSerializer,
                           RecipeSerializer,
                           RecipeContextSerializer,
-                        # ShoppingCartSerializer,
                           TagSerializer)
 
 # from .permissions import AuthorOrReadOnly
@@ -115,7 +114,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     "Вьюсет для ингредиентов."
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    pagination_class = pagination.PageNumberPagination
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
