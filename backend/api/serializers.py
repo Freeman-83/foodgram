@@ -1,5 +1,6 @@
 import base64
 import webcolors
+from django.db.models import F
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 
@@ -133,28 +134,6 @@ class IngredientSerializer(serializers.ModelSerializer):
                   'measurement_unit')
 
 
-class IngredientRecipeSerializer(serializers.ModelSerializer):
-    "Сериализатор для ингредиента-рецепта."
-    id = serializers.PrimaryKeyRelatedField(
-        queryset=Ingredient.objects.all(),
-    )
-    name = serializers.CharField(
-        source='ingredient.name',
-        required=False
-    )
-    measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit',
-        required=False
-    )
-
-    class Meta:
-        model = IngredientRecipe
-        fields = ('id',
-                  'name',
-                  'measurement_unit',
-                  'amount')
-
-
 class RecipeSerializer(serializers.ModelSerializer):
     "Сериализатор для создания-обновления рецептов."
     ingredients = serializers.SerializerMethodField()
@@ -191,7 +170,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_list)
 
         for ingredient in ingredients_data:
-            current_ingredient = Ingredient.objects.get(pk=ingredient.get('id'))
+            current_ingredient = get_object_or_404(
+                Ingredient, pk=ingredient.get('id')
+            )
             amount = ingredient.get('amount')
             IngredientRecipe.objects.create(ingredient=current_ingredient,
                                             recipe=recipe,
@@ -214,7 +195,12 @@ class RecipeSerializer(serializers.ModelSerializer):
     #     return instance
 
     def get_ingredients(self, recipe):
-        return recipe.ingredients.values()
+        return recipe.ingredients.values(
+            'id',
+            'name',
+            'measurement_unit',
+            amount=F('recipes_used__amount')
+        )
 
     def get_tags(self, recipe):
         return recipe.tags.values()

@@ -57,6 +57,12 @@ class Recipe(models.Model):
     )
     cooking_time = models.IntegerField('Время приготовления')
 
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+
     class Meta:
         ordering = ['name']
         verbose_name = 'Recipe'
@@ -144,11 +150,12 @@ class Favorite(models.Model):
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='favorites'
+        related_name='favorite_recipes'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='in_favorite_for_users'
     )
 
     class Meta:
@@ -167,11 +174,12 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='shopping_cart'
+        related_name='shopping_carts'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='in_shopping_cart_for_users'
     )
 
     class Meta:

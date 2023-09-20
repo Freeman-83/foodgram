@@ -202,9 +202,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_404_NOT_FOUND)
 
 
-        @action(detail=False)
-        def download_shopping_cart(self, request):
-            pass
+    @action(detail=False)
+    def download_shopping_cart(self, request):
+        shopping_data = Ingredient.objects.filter()
+            
         
 # class ShoppingCartViewSet(viewsets.ModelViewSet):
 #     serializer_class = ShoppingCartSerializer
