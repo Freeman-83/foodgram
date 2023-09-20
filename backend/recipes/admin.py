@@ -11,7 +11,9 @@ from .models import (Favorite,
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'author', 'name', 'text', 'cooking_time', 'image')
+    list_display = (
+        'id', 'author', 'name', 'text', 'cooking_time', 'image', 'pub_date'
+    )
     search_fields = ('author', 'name')
     list_filter = ('author', 'name', 'tags')
     # list_editable = ('text',)
