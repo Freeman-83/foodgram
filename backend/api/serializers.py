@@ -92,7 +92,7 @@ class CustomUserContextSerializer(UserSerializer):
     в других контекстах."""
     is_subscribed = serializers.SerializerMethodField()
     recipes = RecipeContextSerializer(many=True)
-    recipes_count = serializers.IntegerField(read_only=True)
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -110,6 +110,9 @@ class CustomUserContextSerializer(UserSerializer):
     def get_is_subscribed(self, author):
         user = self.context['request'].user
         return Subscribe.objects.filter(user=user, author=author).exists()
+    
+    def get_recipes_count(self, author):
+        return author.recipes.all().count()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -179,20 +182,32 @@ class RecipeSerializer(serializers.ModelSerializer):
                                             amount=amount)
         return recipe
     
-    # def update(self, instance, validated_data):
-    #     if 'tags' in self.initial_data:
-    #         tags_list = validated_data.pop('tags')
-    #         instance.tags.set(tags_list)
+    def update(self, instance, validated_data):
+        tags_list, ingredients_data = '', ''
+        if 'tags_used' in self.initial_data:
+            tags_list = validated_data.pop('tags_used')
+        if 'ingredients' in self.initial_data:
+            ingredients_data = validated_data.pop('ingredients')    
+        
+        instance = Recipe.objects.update_or_create(**validated_data)
 
-    #     if 'ingredients_used' in self.initial_data:
-    #         ingredients_data = validated_data.pop('ingredients_used')
-            
-    #         # for ingredient in ingredients_data:
-    #         instance.ingredients.set(ingredients_data)
+        for tag in tags_list:
+            instance.tags.add(tag)
 
-    #         instance = Recipe.objects.update_or_create(**validated_data)
+        
+        for ingredient in ingredients_data:
+            current_ingredient = get_object_or_404(
+                Ingredient, pk=ingredient.get('id')
+            )
+            amount = ingredient.get('amount')
+            IngredientRecipe.objects.update_or_create(
+                ingredient=current_ingredient,
+                recipe=instance,
+                amount=amount
+            )
+        # instance.ingredients.set(*ingredients_data)
 
-    #     return instance
+        return instance
 
     def get_ingredients(self, recipe):
         return recipe.ingredients.values(

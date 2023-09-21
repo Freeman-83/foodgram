@@ -1,4 +1,5 @@
-from django.db.models import Count
+from django.db.models import Count, F
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
 from djoser.views import UserViewSet
@@ -25,7 +26,8 @@ from .serializers import (CustomUserSerializer,
                           RecipeContextSerializer,
                           TagSerializer)
 
-# from .permissions import AuthorOrReadOnly
+from .permissions import (IsAdminOrOwnerOrReadOnly,
+                          IsAdminOrOwner)
 
 
 # class ListCreateDeleteViewSet(mixins.ListModelMixin,
@@ -37,12 +39,8 @@ from .serializers import (CustomUserSerializer,
 class CustomUserViewSet(UserViewSet):
     "Кастомный вьюсет для пользователей."
     serializer_class = CustomUserSerializer
-    queryset = CustomUser.objects.prefetch_related(
-            'recipes'
-        ).annotate(
-            recipes_count=Count('recipes')
-        ).all()
-    permission_classes = (permissions.IsAuthenticated,)
+    queryset = CustomUser.objects.prefetch_related('recipes').all()
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
@@ -87,7 +85,7 @@ class CustomUserViewSet(UserViewSet):
 
 
     @action(detail=False,
-            permission_classes=[permissions.IsAuthenticated,])
+            permission_classes=[IsAdminOrOwnerOrReadOnly,])
     def subscriptions(self, request):
         subscribers_data = CustomUser.objects.filter(
             subscribers__user=request.user
@@ -124,10 +122,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'tags', 'ingredients'
         ).all()
     serializer_class = RecipeSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
+
+    # def perform_update(self, serializer):
+    #     return super().perform_update(serializer)
 
     def perform_update(self, serializer):
         serializer.save(**self.request.data)
@@ -203,23 +204,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
     @action(detail=False)
-    def download_shopping_cart(self, request):
-        shopping_data = Ingredient.objects.filter()
-            
+    def download_shopping_cart(self, request, *args, **kwargs):
+        recipes = Recipe.objects.filter(
+            in_shopping_cart_for_users__user=request.user
+        )
         
-# class ShoppingCartViewSet(viewsets.ModelViewSet):
-#     serializer_class = ShoppingCartSerializer
-#     # permission_classes = (permissions.IsAuthenticated,)
-#     # filter_backends = (filters.SearchFilter,)
-#     # search_fields = ('user__username', 'recipe__name')
+        shopping_cart = {}
+        
+        for recipe in recipes:
+            ingredients = recipe.ingredients.values(
+                    'name',
+                    'measurement_unit',
+                    amount=F('recipes_used__amount')
+                )
 
-#     def get_queryset(self):
-#         new_queryset = self.request.user.shopping_cart.select_related(
-#             'user', 'recipe'
-#         ).all()
-#         return new_queryset
-    
-#     def perform_create(self, serializer):
-#         recipe = get_object_or_404(Recipe, pk=self.kwargs.get('id'))
-#         serializer.save(user=self.request.user,
-#                         recipe=recipe)
+            for ingredient in ingredients:
+                name = f"{ingredient['name']}, ({ingredient['measurement_unit']}) - "
+                amount = ingredient['amount']
+
+                shopping_cart[name] = shopping_cart.get(name, 0) + amount
+        
+        res_list = [f'{key}{value}\n' for key, value in shopping_cart.items()]
+                
+        filename = 'test.txt'
+        response = HttpResponse(
+            res_list, content_type='text/plain; charset=UTF-8'
+        )
+        # response['Content-Disposition'] = ('attachment; filename={0}'.format(filename))
+
+        return response

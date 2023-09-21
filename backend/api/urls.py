@@ -16,10 +16,6 @@ router.register('tags', TagViewSet)
 router.register('ingredients', IngredientViewSet)
 router.register('users', CustomUserViewSet)
 
-# router.register('recipes/(?P<id>\d+)/download_shopping_cart',
-#                 ShoppingCartViewSet,
-#                 basename='download_shopping_cart')
-
 urlpatterns = [
     path('', include(router.urls)),
     path('', include('djoser.urls')),
