@@ -26,8 +26,8 @@ from .serializers import (CustomUserSerializer,
                           RecipeContextSerializer,
                           TagSerializer)
 
-from .permissions import (IsAdminOrOwnerOrReadOnly,
-                          IsAdminOrOwner)
+from .permissions import (AdminOrReadOnly,
+                          AdminOrAuthorOrReadOnly)
 
 
 # class ListCreateDeleteViewSet(mixins.ListModelMixin,
@@ -85,7 +85,7 @@ class CustomUserViewSet(UserViewSet):
 
 
     @action(detail=False,
-            permission_classes=[IsAdminOrOwnerOrReadOnly,])
+            permission_classes=[permissions.IsAuthenticated,])
     def subscriptions(self, request):
         subscribers_data = CustomUser.objects.filter(
             subscribers__user=request.user
@@ -102,16 +102,18 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+class TagViewSet(viewsets.ModelViewSet):
     "Вьюсет для Тегов."
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    permission_classes = AdminOrReadOnly
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(viewsets.ModelViewSet):
     "Вьюсет для ингредиентов."
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    permission_classes = AdminOrReadOnly
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -122,7 +124,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'tags', 'ingredients'
         ).all()
     serializer_class = RecipeSerializer
-    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (AdminOrAuthorOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
     # filter_backends = (DjangoFilterBackend,)
     # filterset_class = TitleFilterSet
@@ -203,7 +205,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_404_NOT_FOUND)
 
 
-    @action(detail=False)
+    @action(detail=False,
+            permission_classes=[permissions.IsAuthenticated])
     def download_shopping_cart(self, request, *args, **kwargs):
         recipes = Recipe.objects.filter(
             in_shopping_cart_for_users__user=request.user
