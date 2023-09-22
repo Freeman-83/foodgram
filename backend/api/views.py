@@ -1,4 +1,5 @@
 from django.db.models import Count, F
+from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
@@ -26,8 +27,8 @@ from .serializers import (CustomUserSerializer,
                           RecipeContextSerializer,
                           TagSerializer)
 
-from .permissions import (AdminOrReadOnly,
-                          AdminOrAuthorOrReadOnly)
+from .permissions import (IsAdminOrReadOnly,
+                          IsAdminOrAuthorOrReadOnly)
 
 
 # class ListCreateDeleteViewSet(mixins.ListModelMixin,
@@ -106,14 +107,18 @@ class TagViewSet(viewsets.ModelViewSet):
     "Вьюсет для Тегов."
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = AdminOrReadOnly
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
     "Вьюсет для ингредиентов."
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = AdminOrReadOnly
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,
+                       filters.OrderingFilter)
+    search_fields = ('^name',)
+    ordering_fields = ('name',)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -124,10 +129,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'tags', 'ingredients'
         ).all()
     serializer_class = RecipeSerializer
-    permission_classes = (AdminOrAuthorOrReadOnly,)
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
-    # filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter,
+                       filters.OrderingFilter)
+    filterset_fields = ('tags__name',)
     # filterset_class = TitleFilterSet
+    search_fields = ('name',)
+    ordering_fields = ('pub_date')
+    
 
     # def perform_update(self, serializer):
     #     return super().perform_update(serializer)
@@ -211,7 +222,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipes = Recipe.objects.filter(
             in_shopping_cart_for_users__user=request.user
         )
-        
+
         shopping_cart = {}
         
         for recipe in recipes:
@@ -228,7 +239,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 shopping_cart[name] = shopping_cart.get(name, 0) + amount
         
         res_list = [f'{key}{value}\n' for key, value in shopping_cart.items()]
-                
+
         filename = 'test.txt'
         response = HttpResponse(
             res_list, content_type='text/plain; charset=UTF-8'
