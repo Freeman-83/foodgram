@@ -182,10 +182,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         if ingredients_data:
             for ingredient in ingredients_data:
                 ingredient_id = ingredient.get('id')
-                amount = ingredient.get('amount', 0)
+                amount = ingredient.get('amount')
                 if not Ingredient.objects.filter(id=ingredient_id).exists():
                     raise ValidationError('Несуществующий ингредиент!')
-                if not amount or type(amount) is not int:
+                if not amount or type(amount) is not int or amount < 1:
                     raise ValidationError(
                         'Укажите количество используемого ингредиента '
                         '(натуральное число не менее 1)'
