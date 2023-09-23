@@ -138,26 +138,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     # filterset_class = TitleFilterSet
     search_fields = ('name',)
     ordering_fields = ('pub_date')
-    
 
-    # def perform_update(self, serializer):
-    #     return super().perform_update(serializer)
-
-    def perform_update(self, serializer):
-        serializer.save(**self.request.data)
-
-    def perform_create(self, serializer):
-        ingredients = self.request.data['ingredients']
-        tags = self.request.data['tags']
-        serializer.save(ingredients=ingredients,
-                        tags=tags,
-                        author=self.request.user)
-        
-    # def update(self, request, *args, **kwargs):
-    #     kwargs['partial'] = True
-    #     return super().update(request, *args, **kwargs)
-
-    # Не настроено изменение ингредиентов!
 
     @action(methods=['post', 'delete'],
             detail=True,

@@ -166,10 +166,47 @@ class RecipeSerializer(serializers.ModelSerializer):
                                     fields=['author', 'name'])
         ]
 
+    def validate(self, data):
+        tags_list = self.initial_data.get('tags')
+        ingredients_data = self.initial_data.get('ingredients')
+
+        if tags_list:
+            for tag_id in tags_list:
+                if not Tag.objects.filter(id=tag_id).exists():
+                    raise ValidationError('Несуществующий тег!')
+        else:
+            raise ValidationError(
+                'Необходимо указать минимум один тег!'
+            )
+
+        if ingredients_data:
+            for ingredient in ingredients_data:
+                ingredient_id = ingredient.get('id')
+                amount = ingredient.get('amount', 0)
+                if not Ingredient.objects.filter(id=ingredient_id).exists():
+                    raise ValidationError('Несуществующий ингредиент!')
+                if not amount or type(amount) is not int:
+                    raise ValidationError(
+                        'Укажите количество используемого ингредиента '
+                        '(натуральное число не менее 1)'
+                    )
+
+        else:
+            raise ValidationError(
+                'Необходимо указать минимум один ингредиент!'
+            )
+
+        data.update({'tags': tags_list,
+                     'ingredients': ingredients_data})
+
+        return data
+
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients')
         tags_list = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
+        
         recipe = Recipe.objects.create(**validated_data)
+        
         recipe.tags.set(tags_list)
 
         for ingredient in ingredients_data:
@@ -183,29 +220,29 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
     
     def update(self, instance, validated_data):
-        tags_list, ingredients_data = '', ''
-        if 'tags_used' in self.initial_data:
-            tags_list = validated_data.pop('tags_used')
-        if 'ingredients' in self.initial_data:
-            ingredients_data = validated_data.pop('ingredients')    
-        
-        instance = Recipe.objects.update_or_create(**validated_data)
 
-        for tag in tags_list:
-            instance.tags.add(tag)
+        tags_list = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
 
-        
-        for ingredient in ingredients_data:
-            current_ingredient = get_object_or_404(
-                Ingredient, pk=ingredient.get('id')
-            )
-            amount = ingredient.get('amount')
-            IngredientRecipe.objects.update_or_create(
-                ingredient=current_ingredient,
-                recipe=instance,
-                amount=amount
-            )
-        # instance.ingredients.set(*ingredients_data)
+        instance = super().update(instance, validated_data)
+
+        instance.save()
+
+        if tags_list:
+            instance.tags.clear()
+            instance.tags.set(tags_list)
+
+        if ingredients_data:
+            instance.ingredients.clear()
+            for ingredient in ingredients_data:
+                current_ingredient = get_object_or_404(
+                    Ingredient, pk=ingredient.get('id')
+                )
+                amount = ingredient.get('amount')
+
+                IngredientRecipe.objects.create(ingredient=current_ingredient,
+                                                recipe=instance,
+                                                amount=amount)
 
         return instance
 
