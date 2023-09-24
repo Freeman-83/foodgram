@@ -23,7 +23,7 @@ from users.models import CustomUser
 
 class Base64ImageField(serializers.ImageField):
     "Кастомное поле для изображений."
-    
+
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -34,7 +34,7 @@ class Base64ImageField(serializers.ImageField):
 
 class Hex2NameColor(serializers.Field):
     "Кастомное поле для преобразования цветового кода."
-    
+
     def to_representation(self, value):
         return value
 
@@ -76,7 +76,7 @@ class CustomUserSerializer(UserSerializer):
 
 class RegisterUserSerializer(UserCreateSerializer):
     "Кастомный сериализатор для регистрации пользователя."
-    
+
     class Meta:
         model = CustomUser
         fields = ('id',
@@ -88,7 +88,7 @@ class RegisterUserSerializer(UserCreateSerializer):
 
 
 class CustomUserContextSerializer(UserSerializer):
-    """ Кастомный сериализатор для отображения профиля пользователя 
+    """ Кастомный сериализатор для отображения профиля пользователя
     в других контекстах."""
     is_subscribed = serializers.SerializerMethodField()
     recipes = RecipeContextSerializer(many=True)
@@ -110,7 +110,7 @@ class CustomUserContextSerializer(UserSerializer):
     def get_is_subscribed(self, author):
         user = self.context['request'].user
         return Subscribe.objects.filter(user=user, author=author).exists()
-    
+
     def get_recipes_count(self, author):
         return author.recipes.all().count()
 
@@ -199,7 +199,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                      'ingredients': ingredients_data})
 
         return data
-    
+
     def create_ingredients(self, recipe, ingredients):
         for ingredient in ingredients:
             current_ingredient = get_object_or_404(
@@ -219,7 +219,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         self.create_ingredients(recipe, ingredients_data)
 
         return recipe
-    
+
     def update(self, instance, validated_data):
         tags_list = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
@@ -244,11 +244,11 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_tags(self, recipe):
         return recipe.tags.values()
-    
+
     def get_is_favorite(self, recipe):
         user = self.context['request'].user.id
         return Favorite.objects.filter(user=user, recipe=recipe).exists()
-    
+
     def get_is_in_shopping_cart(self, recipe):
         user = self.context['request'].user.id
         return ShoppingCart.objects.filter(user=user, recipe=recipe).exists()

@@ -39,10 +39,9 @@ class CustomUserViewSet(UserViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
 
-
     @action(methods=['post', 'delete'],
             detail=True,
-            permission_classes=[permissions.IsAuthenticated,])
+            permission_classes=[permissions.IsAuthenticated, ])
     def subscribe(self, request, id=None):
         author = get_object_or_404(CustomUser, pk=id)
         subscribe_obj = Subscribe.objects.filter(user=request.user,
@@ -64,7 +63,7 @@ class CustomUserViewSet(UserViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             return Response(
-                data = {'errors': 'Повторная подписка на пользователя'},
+                data={'errors': 'Повторная подписка на пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -73,13 +72,12 @@ class CustomUserViewSet(UserViewSet):
                 subscribe_obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                data = {'errors': 'Подписка отсутствует'},
+                data={'errors': 'Подписка отсутствует'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-
     @action(detail=False,
-            permission_classes=[permissions.IsAuthenticated,])
+            permission_classes=[permissions.IsAuthenticated, ])
     def subscriptions(self, request):
         subscribers_data = CustomUser.objects.filter(
             subscribers__user=request.user
@@ -133,10 +131,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
     ordering_fields = ('pub_date')
 
-
     @action(methods=['post', 'delete'],
             detail=True,
-            permission_classes=[permissions.IsAuthenticated,])
+            permission_classes=[permissions.IsAuthenticated, ])
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         favorite_obj = Favorite.objects.filter(user=request.user,
@@ -150,7 +147,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
             return Response(
-                data = {'errors': 'Повторное добавление рецепта в избранное'},
+                data={'errors': 'Повторное добавление рецепта в избранное'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -159,10 +156,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 favorite_obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                data = {'errors': 'Рецепт в избранном отсутствует'},
+                data={'errors': 'Рецепт в избранном отсутствует'},
                 status=status.HTTP_404_NOT_FOUND
             )
-
 
     @action(methods=['post', 'delete'],
             detail=True,
@@ -177,7 +173,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 ShoppingCart.objects.create(user=request.user,
                                             recipe=recipe)
                 serializer = RecipeContextSerializer(recipe)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
             return Response(
                 data={'errors': 'Повторное добавление рецепта в корзину!'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -187,9 +184,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             if shopping_cart_obj.exists():
                 shopping_cart_obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(data = {'errors': 'Рецепт в корзине отсутствует'},
+            return Response(data={'errors': 'Рецепт в корзине отсутствует'},
                             status=status.HTTP_404_NOT_FOUND)
-
 
     @action(detail=False,
             permission_classes=[permissions.IsAuthenticated])
@@ -199,7 +195,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
         shopping_cart = {}
-        
+
         for recipe in recipes:
             ingredients = recipe.ingredients.values(
                     'name',
@@ -208,11 +204,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
 
             for ingredient in ingredients:
-                name = f"{ingredient['name']}, ({ingredient['measurement_unit']}) - "
+                name = f"""{ingredient['name']},
+                ({ingredient['measurement_unit']}) - """
+
                 amount = ingredient['amount']
 
                 shopping_cart[name] = shopping_cart.get(name, 0) + amount
-        
+
         res_list = [f'{key}{value}\n' for key, value in shopping_cart.items()]
 
         with open(f'{settings.BASE_DIR}/media/shopping_cart.txt',
