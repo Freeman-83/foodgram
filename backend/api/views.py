@@ -1,4 +1,5 @@
-from django.db.models import Count, F
+from django.conf import settings
+from django.db.models import F
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -9,7 +10,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from rest_framework import filters, mixins, pagination, permissions, viewsets
+from rest_framework import filters, pagination, permissions, viewsets
 
 from recipes.models import (Favorite,
                             Ingredient,
@@ -31,20 +32,12 @@ from .permissions import (IsAdminOrReadOnly,
                           IsAdminOrAuthorOrReadOnly)
 
 
-# class ListCreateDeleteViewSet(mixins.ListModelMixin,
-#                               mixins.CreateModelMixin,
-#                               mixins.DestroyModelMixin,
-#                               viewsets.GenericViewSet):
-#     pass
-
 class CustomUserViewSet(UserViewSet):
     "Кастомный вьюсет для пользователей."
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.prefetch_related('recipes').all()
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_class = TitleFilterSet
 
 
     @action(methods=['post', 'delete'],
@@ -108,6 +101,7 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = None
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -115,6 +109,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = None
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter)
     search_fields = ('^name',)
@@ -135,7 +130,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                        filters.SearchFilter,
                        filters.OrderingFilter)
     filterset_fields = ('tags__name',)
-    # filterset_class = TitleFilterSet
     search_fields = ('name',)
     ordering_fields = ('pub_date')
 
@@ -221,10 +215,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         
         res_list = [f'{key}{value}\n' for key, value in shopping_cart.items()]
 
-        filename = 'test.txt'
-        response = HttpResponse(
-            res_list, content_type='text/plain; charset=UTF-8'
-        )
-        # response['Content-Disposition'] = ('attachment; filename={0}'.format(filename))
+        with open(f'{settings.BASE_DIR}/media/shopping_cart.txt',
+                  'w+',
+                  encoding='utf-8') as file:
+            file.write(''.join(res_list))
+
+            response = HttpResponse(file)
 
         return response

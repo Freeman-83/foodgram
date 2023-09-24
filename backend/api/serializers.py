@@ -252,26 +252,3 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, recipe):
         user = self.context['request'].user.id
         return ShoppingCart.objects.filter(user=user, recipe=recipe).exists()
-
-
-# class ShoppingCartSerializer(serializers.ModelSerializer):
-#     "Сериализатор для корзины покупок."
-#     recipe = RecipeInfoSerializer(read_only=True)
-    
-#     class Meta:
-#         model = ShoppingCart
-#         fields = ('recipe',)
-        
-#     def validate(self, data):
-#         request = self.context['request']
-#         user = request.user
-#         recipe = get_object_or_404(
-#             Recipe, pk=self.context['view'].kwargs.get('id')
-#         )
-
-#         if request.method == 'POST':
-#             if ShoppingCart.objects.filter(user=user, recipe=recipe):
-#                 raise ValidationError(
-#                     'Повторное добавление рецепта в корзину!'
-#                 )
-#         return data
