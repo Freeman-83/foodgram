@@ -1,5 +1,6 @@
 import base64
 import webcolors
+
 from django.db.models import F
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
@@ -145,7 +146,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(
         default=serializers.CurrentUserDefault()
     )
-    is_favorite = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
@@ -158,7 +159,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'name',
                   'text',
                   'cooking_time',
-                  'is_favorite',
+                  'is_favorited',
                   'is_in_shopping_cart')
 
         validators = [
@@ -185,7 +186,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 amount = ingredient.get('amount')
                 if not Ingredient.objects.filter(id=ingredient_id).exists():
                     raise ValidationError('Несуществующий ингредиент!')
-                if not amount or type(amount) is not int or amount < 1:
+                if not amount or int(amount) < 1:
                     raise ValidationError(
                         'Укажите количество используемого ингредиента '
                         '(натуральное число не менее 1)'
@@ -245,7 +246,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_tags(self, recipe):
         return recipe.tags.values()
 
-    def get_is_favorite(self, recipe):
+    def get_is_favorited(self, recipe):
         user = self.context['request'].user.id
         return Favorite.objects.filter(user=user, recipe=recipe).exists()
 

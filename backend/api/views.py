@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db.models import F
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
@@ -6,11 +5,13 @@ from django.shortcuts import get_object_or_404
 
 from djoser.views import UserViewSet
 
+from .filters import IngredientFilterSet, RecipeFilterSet
+
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from rest_framework import filters, pagination, permissions, viewsets
+from rest_framework import pagination, permissions, viewsets
 
 from recipes.models import (Favorite,
                             Ingredient,
@@ -28,14 +29,13 @@ from .serializers import (CustomUserSerializer,
                           RecipeContextSerializer,
                           TagSerializer)
 
-from .permissions import (IsAdminOrReadOnly,
-                          IsAdminOrAuthorOrReadOnly)
+from .permissions import IsAdminOrAuthorOrReadOnly
 
 
 class CustomUserViewSet(UserViewSet):
     "Кастомный вьюсет для пользователей."
     serializer_class = CustomUserSerializer
-    queryset = CustomUser.objects.prefetch_related('recipes').all()
+    queryset = CustomUser.objects.all()
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
 
@@ -83,63 +83,47 @@ class CustomUserViewSet(UserViewSet):
             subscribers__user=request.user
         )
         page = self.paginate_queryset(subscribers_data)
-        if page:
-            serializer = CustomUserContextSerializer(
-                page, many=True, context={'request': request}
-            )
-            return self.get_paginated_response(serializer.data)
         serializer = CustomUserContextSerializer(
-                subscribers_data, many=True, context={'request': request}
-            )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            page, many=True, context={'request': request}
+        )
+
+        return self.get_paginated_response(serializer.data)
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     "Вьюсет для Тегов."
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (IsAdminOrReadOnly,)
     pagination_class = None
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     "Вьюсет для ингредиентов."
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (IsAdminOrReadOnly,)
     pagination_class = None
-    filter_backends = (filters.SearchFilter,
-                       filters.OrderingFilter)
-    search_fields = ('^name',)
-    ordering_fields = ('name',)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilterSet
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     "Вьюсет для рецептов."
-    queryset = Recipe.objects.select_related(
-            'author'
-        ).prefetch_related(
-            'tags', 'ingredients'
-        ).all()
+    queryset = Recipe.objects.select_related('author').all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
     pagination_class = pagination.PageNumberPagination
-    filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter,
-                       filters.OrderingFilter)
-    filterset_fields = ('tags__name',)
-    search_fields = ('name',)
-    ordering_fields = ('pub_date')
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilterSet
 
     @action(methods=['post', 'delete'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated, ])
     def favorite(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        favorite_obj = Favorite.objects.filter(user=request.user,
-                                               recipe=recipe)
 
         if request.method == 'POST':
+            recipe = get_object_or_404(Recipe, pk=pk)
+            favorite_obj = Favorite.objects.filter(user=request.user,
+                                                   recipe=recipe)
             if not favorite_obj.exists():
                 Favorite.objects.create(user=request.user,
                                         recipe=recipe)
@@ -152,6 +136,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
         elif request.method == 'DELETE':
+            recipe = get_object_or_404(Recipe, pk=pk)
+            favorite_obj = Favorite.objects.filter(user=request.user,
+                                                   recipe=recipe)
             if favorite_obj.exists():
                 favorite_obj.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -167,7 +154,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=pk)
         shopping_cart_obj = ShoppingCart.objects.filter(user=request.user,
                                                         recipe=recipe)
-
         if request.method == 'POST':
             if not shopping_cart_obj.exists():
                 ShoppingCart.objects.create(user=request.user,
@@ -204,20 +190,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
 
             for ingredient in ingredients:
-                name = f"""{ingredient['name']},
-                ({ingredient['measurement_unit']}) - """
-
+                name = (f"{ingredient['name']} "
+                        f"({ingredient['measurement_unit']}) - ")
                 amount = ingredient['amount']
-
                 shopping_cart[name] = shopping_cart.get(name, 0) + amount
 
-        res_list = [f'{key}{value}\n' for key, value in shopping_cart.items()]
+        shopping_list = 'Список покупок:\n'
 
-        with open(f'{settings.BASE_DIR}/media/shopping_cart.txt',
-                  'w+',
-                  encoding='utf-8') as file:
-            file.write(''.join(res_list))
+        for key, value in shopping_cart.items():
+            shopping_list += f'{key}{value}\n'
 
-            response = HttpResponse(file)
+        filename = 'shopping_list.txt'
+        response = HttpResponse(shopping_list, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
 
         return response
