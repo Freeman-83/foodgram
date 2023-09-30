@@ -115,63 +115,48 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilterSet
 
+    def create_recipe_to_user(self, model_relations, user, pk):
+        recipe = get_object_or_404(Recipe, id=pk)
+        model_relations_obj = model_relations.objects.filter(user=user,
+                                                             recipe=recipe)
+        if not model_relations_obj.exists():
+            model_relations.objects.create(user=user,
+                                           recipe=recipe)
+            serializer = RecipeContextSerializer(recipe)
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(
+            data={'errors': 'Попытка повторного добавление объекта'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    def delete_recipe_from_user(self, model_relations, user, pk):
+        recipe = get_object_or_404(Recipe, id=pk)
+        model_relations_obj = model_relations.objects.filter(user=user,
+                                                             recipe=recipe)
+        if model_relations_obj.exists():
+            model_relations_obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            data={'errors': 'Попытка удаления несуществующего объекта'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
     @action(methods=['post', 'delete'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated, ])
     def favorite(self, request, pk=None):
-
         if request.method == 'POST':
-            recipe = get_object_or_404(Recipe, pk=pk)
-            favorite_obj = Favorite.objects.filter(user=request.user,
-                                                   recipe=recipe)
-            if not favorite_obj.exists():
-                Favorite.objects.create(user=request.user,
-                                        recipe=recipe)
-                serializer = RecipeContextSerializer(recipe)
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(
-                data={'errors': 'Повторное добавление рецепта в избранное'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        elif request.method == 'DELETE':
-            recipe = get_object_or_404(Recipe, pk=pk)
-            favorite_obj = Favorite.objects.filter(user=request.user,
-                                                   recipe=recipe)
-            if favorite_obj.exists():
-                favorite_obj.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                data={'errors': 'Рецепт в избранном отсутствует'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return self.create_recipe_to_user(Favorite, request.user, pk)
+        return self.delete_recipe_from_user(Favorite, request.user, pk)
 
     @action(methods=['post', 'delete'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated])
     def shopping_cart(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        shopping_cart_obj = ShoppingCart.objects.filter(user=request.user,
-                                                        recipe=recipe)
         if request.method == 'POST':
-            if not shopping_cart_obj.exists():
-                ShoppingCart.objects.create(user=request.user,
-                                            recipe=recipe)
-                serializer = RecipeContextSerializer(recipe)
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(
-                data={'errors': 'Повторное добавление рецепта в корзину!'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        elif request.method == 'DELETE':
-            if shopping_cart_obj.exists():
-                shopping_cart_obj.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(data={'errors': 'Рецепт в корзине отсутствует'},
-                            status=status.HTTP_404_NOT_FOUND)
+            return self.create_recipe_to_user(ShoppingCart, request.user, pk)
+        return self.delete_recipe_from_user(ShoppingCart, request.user, pk)
 
     @action(detail=False,
             permission_classes=[permissions.IsAuthenticated])
