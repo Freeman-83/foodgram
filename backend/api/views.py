@@ -32,6 +32,41 @@ from .serializers import (CustomUserSerializer,
 from .permissions import IsAdminOrAuthorOrReadOnly
 
 
+def create_relation(request, model, model_relation, pk, serializer, field):
+    "Функция создания связи User -> Model."
+    model_obj = get_object_or_404(model, pk=pk)
+    model_relation_obj = model_relation.objects.filter(
+        user=request.user, **{field: model_obj}
+    )
+
+    if not model_relation_obj.exists():
+        model_relation.objects.create(user=request.user,
+                                      **{field: model_obj})
+        serializer = serializer(model_obj, context={'request': request})
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED)
+    return Response(
+        data={'errors': 'Попытка повторного добавления объекта'},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+
+def delete_relation(request, model, model_relation, pk, field):
+    "Функция удаления связи User -> Model."
+    model_obj = get_object_or_404(model, pk=pk)
+    model_relation_obj = model_relation.objects.filter(
+        user=request.user, **{field: model_obj}
+    )
+
+    if model_relation_obj.exists():
+        model_relation_obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(
+        data={'errors': 'Попытка удаления несуществующего объекта'},
+        status=status.HTTP_404_NOT_FOUND
+    )
+
+
 class CustomUserViewSet(UserViewSet):
     "Кастомный вьюсет для пользователей."
     serializer_class = CustomUserSerializer
@@ -42,39 +77,25 @@ class CustomUserViewSet(UserViewSet):
     @action(methods=['post', 'delete'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated, ])
-    def subscribe(self, request, id=None):
+    def subscribe(self, request, id):
         author = get_object_or_404(CustomUser, pk=id)
-        subscribe_obj = Subscribe.objects.filter(user=request.user,
-                                                 author=author)
-
-        if request.method == 'POST':
-            if not subscribe_obj.exists():
-                if author != request.user:
-                    Subscribe.objects.create(user=request.user,
-                                             author=author)
-                    serializer = CustomUserContextSerializer(
-                        author, context={'request': request}
-                    )
-                    return Response(
-                        serializer.data,
-                        status=status.HTTP_201_CREATED)
-                return Response(
-                    data={'errors': 'Подписка на себя запрещена!'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            return Response(
-                data={'errors': 'Повторная подписка на пользователя'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        elif request.method == 'DELETE':
-            if subscribe_obj.exists():
-                subscribe_obj.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                data={'errors': 'Подписка отсутствует'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        if request.user != author:
+            if request.method == 'POST':
+                return create_relation(request,
+                                       CustomUser,
+                                       Subscribe,
+                                       id,
+                                       CustomUserContextSerializer,
+                                       field='author')
+            return delete_relation(request,
+                                   CustomUser,
+                                   Subscribe,
+                                   id,
+                                   field='author')
+        return Response(
+            data={'errors': 'Подписка на самого себя запрещена'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=False,
             permission_classes=[permissions.IsAuthenticated, ])
@@ -115,48 +136,39 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilterSet
 
-    def create_recipe_to_user(self, model_relations, user, pk):
-        recipe = get_object_or_404(Recipe, id=pk)
-        model_relations_obj = model_relations.objects.filter(user=user,
-                                                             recipe=recipe)
-        if not model_relations_obj.exists():
-            model_relations.objects.create(user=user,
-                                           recipe=recipe)
-            serializer = RecipeContextSerializer(recipe)
-            return Response(serializer.data,
-                            status=status.HTTP_201_CREATED)
-        return Response(
-            data={'errors': 'Попытка повторного добавление объекта'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    def delete_recipe_from_user(self, model_relations, user, pk):
-        recipe = get_object_or_404(Recipe, id=pk)
-        model_relations_obj = model_relations.objects.filter(user=user,
-                                                             recipe=recipe)
-        if model_relations_obj.exists():
-            model_relations_obj.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            data={'errors': 'Попытка удаления несуществующего объекта'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
     @action(methods=['post', 'delete'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated, ])
-    def favorite(self, request, pk=None):
+    def favorite(self, request, pk):
         if request.method == 'POST':
-            return self.create_recipe_to_user(Favorite, request.user, pk)
-        return self.delete_recipe_from_user(Favorite, request.user, pk)
+            return create_relation(request,
+                                   Recipe,
+                                   Favorite,
+                                   pk,
+                                   RecipeContextSerializer,
+                                   field='recipe')
+        return delete_relation(request,
+                               Recipe,
+                               Favorite,
+                               pk,
+                               field='recipe')
 
     @action(methods=['post', 'delete'],
             detail=True,
             permission_classes=[permissions.IsAuthenticated])
-    def shopping_cart(self, request, pk=None):
+    def shopping_cart(self, request, pk):
         if request.method == 'POST':
-            return self.create_recipe_to_user(ShoppingCart, request.user, pk)
-        return self.delete_recipe_from_user(ShoppingCart, request.user, pk)
+            return create_relation(request,
+                                   Recipe,
+                                   ShoppingCart,
+                                   pk,
+                                   RecipeContextSerializer,
+                                   field='recipe')
+        return delete_relation(request,
+                               Recipe,
+                               ShoppingCart,
+                               pk,
+                               field='recipe')
 
     @action(detail=False,
             permission_classes=[permissions.IsAuthenticated])
@@ -169,10 +181,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         for recipe in recipes:
             ingredients = recipe.ingredients.values(
-                    'name',
-                    'measurement_unit',
-                    amount=F('recipes_used__amount')
-                )
+                'name',
+                'measurement_unit',
+                amount=F('recipes_used__amount')
+            )
 
             for ingredient in ingredients:
                 name = (f"{ingredient['name']} "

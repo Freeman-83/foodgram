@@ -15,6 +15,7 @@ def import_data():
                 measurement_unit=row['measurement_unit']
             )
 
+
 class Command(BaseCommand):
     help = 'Import Ingredients data from a CSV file into the Ingredients model'
 
