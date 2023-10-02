@@ -41,7 +41,10 @@ class RecipeContextSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
+        fields = ('id',
+                  'name',
+                  'image',
+                  'cooking_time')
 
 
 class CustomUserSerializer(UserSerializer):
@@ -50,14 +53,12 @@ class CustomUserSerializer(UserSerializer):
 
     class Meta:
         model = CustomUser
-        fields = (
-            'id',
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'is_subscribed'
-        )
+        fields = ('id',
+                  'username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'is_subscribed')
 
     def get_is_subscribed(self, author):
         user = self.context['request'].user.id
@@ -86,16 +87,14 @@ class CustomUserContextSerializer(UserSerializer):
 
     class Meta:
         model = CustomUser
-        fields = (
-            'id',
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count'
-        )
+        fields = ('id',
+                  'username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'is_subscribed',
+                  'recipes',
+                  'recipes_count')
 
     def get_is_subscribed(self, author):
         user = self.context['request'].user
@@ -170,8 +169,13 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
 
         if ingredients_data:
+            ingredients_check_list = []
             for ingredient in ingredients_data:
                 ingredient_id = ingredient.get('id')
+                if ingredient_id in ingredients_check_list:
+                    raise ValidationError(
+                        'Повторное добавление ингредиента в рецепт!'
+                    )
                 amount = ingredient.get('amount')
                 if not Ingredient.objects.filter(id=ingredient_id).exists():
                     raise ValidationError('Несуществующий ингредиент!')
@@ -180,6 +184,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                         'Укажите количество используемого ингредиента '
                         '(натуральное число не менее 1)'
                     )
+                ingredients_check_list.append(ingredient_id)
         else:
             raise ValidationError(
                 'Необходимо указать минимум один ингредиент!'
