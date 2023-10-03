@@ -11,15 +11,15 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from djoser.serializers import UserSerializer, UserCreateSerializer
 
-from recipes.models import (Favorite,
-                            Ingredient,
+from recipes.models import (Ingredient,
                             Recipe,
                             IngredientRecipe,
-                            ShoppingCart,
                             Subscribe,
                             Tag)
 
 from users.models import CustomUser
+
+from .utils import get_validated_ingredients, get_validated_tags
 
 
 class Hex2NameColor(serializers.Field):
@@ -98,7 +98,7 @@ class CustomUserContextSerializer(UserSerializer):
 
     def get_is_subscribed(self, author):
         user = self.context['request'].user
-        return Subscribe.objects.filter(user=user, author=author).exists()
+        return user.subscriptions.filter(author=author).exists()
 
     def get_recipes_count(self, author):
         return author.recipes.all().count()
@@ -155,45 +155,30 @@ class RecipeSerializer(serializers.ModelSerializer):
                                     fields=['author', 'name'])
         ]
 
+    # Убрал валидацию на уровне поля в utils,
+    # потому что иначе ломалась логика с initial_data
+
     def validate(self, data):
-        tags_list = self.initial_data.get('tags')
         ingredients_data = self.initial_data.get('ingredients')
+        tags_list = self.initial_data.get('tags')
 
-        if tags_list:
-            for tag_id in tags_list:
-                if not Tag.objects.filter(id=tag_id).exists():
-                    raise ValidationError('Несуществующий тег!')
-        else:
-            raise ValidationError(
-                'Необходимо указать минимум один тег!'
-            )
+        ingredients = get_validated_ingredients(ingredients_data, Ingredient)
+        tags = get_validated_tags(tags_list, Tag)
 
-        if ingredients_data:
-            ingredients_check_list = []
-            for ingredient in ingredients_data:
-                ingredient_id = ingredient.get('id')
-                if ingredient_id in ingredients_check_list:
-                    raise ValidationError(
-                        'Повторное добавление ингредиента в рецепт!'
-                    )
-                amount = ingredient.get('amount')
-                if not Ingredient.objects.filter(id=ingredient_id).exists():
-                    raise ValidationError('Несуществующий ингредиент!')
-                if not amount or int(amount) < 1:
-                    raise ValidationError(
-                        'Укажите количество используемого ингредиента '
-                        '(натуральное число не менее 1)'
-                    )
-                ingredients_check_list.append(ingredient_id)
-        else:
-            raise ValidationError(
-                'Необходимо указать минимум один ингредиент!'
-            )
-
-        data.update({'tags': tags_list,
-                     'ingredients': ingredients_data})
+        data.update({'ingredients': ingredients,
+                     'tags': tags})
 
         return data
+
+    def validate_cooking_time(self, value):
+        cooking_time = value
+        if not cooking_time or int(cooking_time) < 1:
+            raise ValidationError(
+                'Укажите время приготовления блюда в минутах '
+                '(натуральное число не менее 1)'
+            )
+
+        return value
 
     def create_ingredients(self, recipe, ingredients):
         for ingredient in ingredients:
@@ -240,10 +225,17 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_tags(self, recipe):
         return recipe.tags.values()
 
+    # Решил оставить первый предложенный тобой вариант с related_name.
+    # Он показался мне более наглядным.
+    # Подумал, что если выносить проверку данных полей
+    # в отдельную функцию, то логично было бы захватить и подписки.
+    # Но в таком случае реализация выглядит массивнее, чем сейчас.
+    # Если все же лучше вынести - сделаю без проблем
+
     def get_is_favorited(self, recipe):
-        user = self.context['request'].user.id
-        return Favorite.objects.filter(user=user, recipe=recipe).exists()
+        user = self.context['request'].user
+        return user.favorite_recipes.filter(recipe=recipe).exists()
 
     def get_is_in_shopping_cart(self, recipe):
-        user = self.context['request'].user.id
-        return ShoppingCart.objects.filter(user=user, recipe=recipe).exists()
+        user = self.context['request'].user
+        return user.shopping_carts.filter(recipe=recipe).exists()

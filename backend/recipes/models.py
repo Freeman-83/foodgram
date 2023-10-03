@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from users.models import CustomUser
@@ -39,23 +40,23 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        verbose_name='Автор',
-        related_name='recipes'
+        verbose_name='Автор'
     )
     image = models.ImageField('Изображение', upload_to='recipes/image/')
     tags = models.ManyToManyField(
         Tag,
         through='TagRecipe',
-        verbose_name='Tags',
-        related_name='recipes'
+        verbose_name='Tags'
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientRecipe',
-        verbose_name='Ингредиенты',
-        related_name='recipes'
+        verbose_name='Ингредиенты'
     )
-    cooking_time = models.IntegerField('Время приготовления')
+    cooking_time = models.PositiveSmallIntegerField(
+        'Время приготовления',
+        validators=[MinValueValidator(1)]
+    )
 
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -67,6 +68,7 @@ class Recipe(models.Model):
         ordering = ['-pub_date']
         verbose_name = 'Recipe'
         verbose_name_plural = 'Recipes'
+        default_related_name = 'recipes'
 
     def __str__(self):
         return self.name

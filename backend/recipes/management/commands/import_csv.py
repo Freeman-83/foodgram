@@ -9,11 +9,9 @@ def import_data():
         f'{settings.BASE_DIR}/data/ingredients.csv', encoding='utf-8'
     ) as csvfile:
         reader = csv.DictReader(csvfile)
-        for row in reader:
-            Ingredient.objects.create(
-                name=row['name'],
-                measurement_unit=row['measurement_unit']
-            )
+        ingredients = [Ingredient(**row) for row in reader]
+
+        Ingredient.objects.bulk_create(ingredients)
 
 
 class Command(BaseCommand):
