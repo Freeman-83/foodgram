@@ -2,13 +2,13 @@
 
 FOODGRAM («Продуктовый помощник»): приложение, объединяющее людей, неравнодушных к кулинарии. Здесь пользователи могут опубликовать свои рецепты, подписываться на публикации других авторов и добавлять их рецепты в избранное. Также есть возможность скачать список покупок для приготовления выбранных блюд.
 
-Проект доступен по [адресу](https://foodmaster.ddns.net/) foodmaster.ddns.net
+Сайт проекта: [https://foodmaster.ddns.net/](https://foodmaster.ddns.net/)
 
 Администратор сайта:
 - login: admin
 - password: admin
 
-Документация к API доступна [здесь](https://foodmaster.ddns.net/api/docs/)
+API: [https://foodmaster.ddns.net/api/](https://foodmaster.ddns.net/api/)
 
 ### Стек технологий:
 
@@ -44,7 +44,7 @@ DOCKER_PASSWORD         # пароль от Docker Hub
 DOCKER_USERNAME         # логин Docker Hub
 HOST                    # публичный IP сервера
 USER                    # имя пользователя на сервере
-PASSPHRASE              # *если ssh-ключ защищен паролем
+PASSPHRASE              # пароль удаленного сервера
 SSH_KEY                 # приватный ssh-ключ
 TELEGRAM_TO             # ID телеграм-аккаунта для посылки сообщения
 TELEGRAM_TOKEN          # токен бота, посылающего сообщение
