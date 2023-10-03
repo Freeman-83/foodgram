@@ -148,7 +148,7 @@ class Subscribe(models.Model):
 
 
 class Favorite(models.Model):
-    "Модель избранных рецептов и корзины пользователя."
+    "Модель избранных рецептов."
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
