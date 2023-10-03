@@ -155,6 +155,16 @@ class RecipeSerializer(serializers.ModelSerializer):
                                     fields=['author', 'name'])
         ]
 
+    def validate_cooking_time(self, value):
+        cooking_time = value
+        if not cooking_time or int(cooking_time) < 1:
+            raise ValidationError(
+                'Укажите время приготовления блюда в минутах '
+                '(натуральное число не менее 1)'
+            )
+
+        return value
+
     # Убрал валидацию на уровне поля в utils,
     # потому что иначе ломалась логика с initial_data
 
@@ -169,16 +179,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                      'tags': tags})
 
         return data
-
-    def validate_cooking_time(self, value):
-        cooking_time = value
-        if not cooking_time or int(cooking_time) < 1:
-            raise ValidationError(
-                'Укажите время приготовления блюда в минутах '
-                '(натуральное число не менее 1)'
-            )
-
-        return value
 
     def create_ingredients(self, recipe, ingredients):
         for ingredient in ingredients:
