@@ -5,9 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='key')
 
-# DEBUG = os.getenv('DEBUG', default=False)
-
-DEBUG = True
+DEBUG = os.getenv('DEBUG', default=False)
 
 ALLOWED_HOSTS = ['51.250.101.169', '127.0.0.1', 'localhost', 'foodmaster.ddns.net']
 
