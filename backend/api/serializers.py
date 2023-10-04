@@ -14,7 +14,6 @@ from djoser.serializers import UserSerializer, UserCreateSerializer
 from recipes.models import (Ingredient,
                             Recipe,
                             IngredientRecipe,
-                            Subscribe,
                             Tag)
 
 from users.models import CustomUser
@@ -61,8 +60,8 @@ class CustomUserSerializer(UserSerializer):
                   'is_subscribed')
 
     def get_is_subscribed(self, author):
-        user = self.context['request'].user.id
-        return Subscribe.objects.filter(user=user, author=author).exists()
+        user = self.context['request'].user
+        return user.subscriptions.filter(author=author).exists()
 
 
 class RegisterUserSerializer(UserCreateSerializer):
