@@ -1,6 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from colorfield.fields import ColorField
+
 from users.models import CustomUser
 
 
@@ -8,7 +10,7 @@ class Tag(models.Model):
     "Модель тега."
     name = models.CharField('Tag', unique=True, max_length=200)
     slug = models.SlugField('Slug', unique=True, max_length=200)
-    color = models.CharField('Цветовой код', unique=True, max_length=7)
+    color = ColorField('Цвет', unique=True, max_length=7)
 
     class Meta:
         ordering = ['name']

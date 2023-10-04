@@ -10,6 +10,16 @@ from .models import (Favorite,
                      Subscribe)
 
 
+class IngredientInRecipe(admin.TabularInline):
+    model = IngredientRecipe
+    min_num = 1
+
+
+class TagInRecipe(admin.TabularInline):
+    model = TagRecipe
+    min_num = 1
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author')
@@ -17,6 +27,8 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('author', 'name')
     list_filter = ('author', 'name', 'tags')
     empty_value_display = '-пусто-'
+
+    inlines = [IngredientInRecipe, TagInRecipe]
 
     @admin.display(description='Количество добавлений в избранное')
     def additions_in_favorite_count(self, recipe):
