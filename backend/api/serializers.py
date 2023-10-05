@@ -168,9 +168,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return value
 
-    # Убрал валидацию на уровне поля в utils,
-    # потому что иначе ломалась логика с initial_data
-
     def validate(self, data):
         ingredients_data = self.initial_data.get('ingredients')
         tags_list = self.initial_data.get('tags')
@@ -227,16 +224,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_tags(self, recipe):
         return recipe.tags.values()
-
-    # Решил оставить первый предложенный тобой вариант с related_name.
-    # Некоторое дублирование кода, конечно, есть,
-    # но он показался мне более наглядным.
-    # Подумал, что если выносить проверку данных полей в отдельную функцию,
-    # то логично было бы захватить подписки.
-    # Но в таком случае реализация выглядит массивнее, чем сейчас,
-    # с передачей дополнительных аргументов,
-    # по подобию с функцией создания/удаления связей.
-    # Если все же лучше вынести - сделаю без проблем
 
     def get_is_favorited(self, recipe):
         user = self.context['request'].user

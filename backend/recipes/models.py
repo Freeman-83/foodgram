@@ -112,7 +112,10 @@ class IngredientRecipe(models.Model):
         on_delete=models.CASCADE,
         related_name='ingredients_used'
     )
-    amount = models.IntegerField('Количество')
+    amount = models.PositiveSmallIntegerField(
+        'Количество',
+        validators=[MinValueValidator(1)]
+    )
 
     class Meta:
         ordering = ['ingredient']

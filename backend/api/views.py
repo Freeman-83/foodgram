@@ -1,4 +1,4 @@
-from django.db.models import F
+from django.db.models import F, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -15,6 +15,7 @@ from rest_framework import pagination, permissions, viewsets
 
 from recipes.models import (Favorite,
                             Ingredient,
+                            IngredientRecipe,
                             Recipe,
                             ShoppingCart,
                             Subscribe,
