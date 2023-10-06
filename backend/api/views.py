@@ -100,7 +100,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.select_related(
         'author'
     ).prefetch_related(
-        'tags', 'ingredients'
+        'tags',
+        Prefetch(
+            'ingredients_used',
+            queryset=IngredientRecipe.objects.select_related('ingredient')
+        )
     ).all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
