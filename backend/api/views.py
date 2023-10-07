@@ -30,6 +30,8 @@ from .serializers import (CustomUserSerializer,
                           RecipeContextSerializer,
                           TagSerializer)
 
+from .paginators import CustomPagination
+
 from .permissions import IsAdminOrAuthorOrReadOnly
 
 from .utils import create_relation, delete_relation
@@ -40,7 +42,12 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.all()
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    pagination_class = pagination.PageNumberPagination
+    pagination_class = CustomPagination
+
+    def get_permissions(self):
+        if self.action == 'me':
+            self.permission_classes = [permissions.IsAuthenticated, ]
+        return super().get_permissions()
 
     @action(methods=['post', 'delete'],
             detail=True,
@@ -108,7 +115,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ).all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
-    pagination_class = pagination.PageNumberPagination
+    pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilterSet
 

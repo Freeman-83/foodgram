@@ -39,4 +39,6 @@ class RecipeFilterSet(FilterSet):
 
     def is_exist_filter(self, queryset, name, value):
         lookup = '__'.join([name, 'user'])
+        if self.request.user.is_anonymous:
+            return queryset
         return queryset.filter(**{lookup: self.request.user})

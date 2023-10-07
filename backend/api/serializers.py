@@ -1,3 +1,4 @@
+import re
 import webcolors
 
 from django.db.models import F
@@ -77,6 +78,19 @@ class RegisterUserSerializer(UserCreateSerializer):
                   'first_name',
                   'last_name',
                   'password')
+
+    def validate_username(self, data):
+        username = data
+        error_symbols_list = []
+
+        for symbol in username:
+            if not re.search(r'^[\w.@+-]+\Z', symbol):
+                error_symbols_list.append(symbol)
+        if error_symbols_list:
+            raise serializers.ValidationError(
+                f'Символы {"".join(error_symbols_list)} недопустимы'
+            )
+        return data
 
 
 class CustomUserContextSerializer(UserSerializer):
@@ -164,6 +178,14 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise ValidationError(
                 'Укажите время приготовления блюда в минутах '
                 '(натуральное число не менее 1)'
+            )
+
+        return value
+
+    def validate_image(self, value):
+        if not value:
+            raise ValidationError(
+                'Необходимо добавить фото своего рецепта'
             )
 
         return value
