@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from rest_framework import pagination, permissions, viewsets
+from rest_framework import permissions, viewsets
 
 from recipes.models import (Favorite,
                             Ingredient,
