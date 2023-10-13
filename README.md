@@ -4,11 +4,7 @@ FOODGRAM («Продуктовый помощник»): приложение, о
 
 Сайт проекта: [https://foodmaster.ddns.net/](https://foodmaster.ddns.net/)
 
-Администратор сайта:
-- email: admin@yandex.ru
-- password: admin
-
-API: [https://foodmaster.ddns.net/api/](https://foodmaster.ddns.net/api/)
+API: [https://foodmaster.ddns.net/api/docs/](https://foodmaster.ddns.net/api/docs/)
 
 ### Стек технологий:
 
